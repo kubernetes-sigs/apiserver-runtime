@@ -30,7 +30,6 @@ import (
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apiserver"
-	informers "sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/generated/informers/externalversions"
 )
 
 // change: apiserver-runtime
@@ -40,7 +39,6 @@ import (
 type WardleServerOptions struct {
 	RecommendedOptions *genericoptions.RecommendedOptions
 
-	SharedInformerFactory informers.SharedInformerFactory
 	StdOut                io.Writer
 	StdErr                io.Writer
 }
@@ -168,7 +166,6 @@ func (o WardleServerOptions) RunWardleServer(stopCh <-chan struct{}) error {
 
 	server.GenericAPIServer.AddPostStartHookOrDie("start-sample-server-informers", func(context genericapiserver.PostStartHookContext) error {
 		config.GenericConfig.SharedInformerFactory.Start(context.StopCh)
-		o.SharedInformerFactory.Start(context.StopCh)
 		return nil
 	})
 
