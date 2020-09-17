@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2017 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package apiserver_runtime contains libraries building Kubernetes style apiservers.
-// nolint:stylecheck,golint
-package apiserver_runtime
+// +groupName=sample.k8s.com
+
+// Package sample provides the internal version of all APIs in the sample.k8s.com API group.
+package sample // import "sigs.k8s.io/apiserver-runtime/sample/pkg/apis/sample"

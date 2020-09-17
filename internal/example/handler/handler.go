@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic"
 	regsitryrest "k8s.io/apiserver/pkg/registry/rest"
-	"sigs.k8s.io/apiserver-runtime/example/v1alpha1"
+	"sigs.k8s.io/apiserver-runtime/internal/example/v1alpha1"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/rest"
 )

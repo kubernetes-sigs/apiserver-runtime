@@ -17,7 +17,7 @@ limitations under the License.
 package example
 
 import (
-	"sigs.k8s.io/apiserver-runtime/example/v1alpha1"
+	"sigs.k8s.io/apiserver-runtime/internal/example/v1alpha1"
 )
 
 type ExampleResource = v1alpha1.ExampleResource

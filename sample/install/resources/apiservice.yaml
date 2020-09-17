@@ -1,0 +1,13 @@
+apiVersion: apiregistration.k8s.io/v1
+kind: APIService
+metadata:
+  name: v1alpha1.sample.k8s.com # {"$kpt-set":"version-group"}
+spec:
+  insecureSkipTLSVerify: true
+  group: sample.k8s.com # {"$kpt-set":"group"}
+  groupPriorityMinimum: 1000
+  versionPriority: 15
+  service:
+    name: apiserver
+    namespace: sample-system # {"$kpt-set":"namespace"}
+  version: v1alpha1

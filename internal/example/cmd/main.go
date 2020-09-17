@@ -17,8 +17,8 @@ limitations under the License.
 package main
 
 import (
-	"sigs.k8s.io/apiserver-runtime/example/v1alpha1"
-	"sigs.k8s.io/apiserver-runtime/example/v1beta1"
+	"sigs.k8s.io/apiserver-runtime/internal/example/v1alpha1"
+	"sigs.k8s.io/apiserver-runtime/internal/example/v1beta1"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
 )
