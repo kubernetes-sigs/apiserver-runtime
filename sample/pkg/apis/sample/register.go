@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2017 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,6 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package apiserver_runtime contains libraries building Kubernetes style apiservers.
-// nolint:stylecheck,golint
-package apiserver_runtime
+package sample
+
+import (
+	"sigs.k8s.io/apiserver-runtime/sample/pkg/apis/sample/v1alpha1"
+)
+
+// Fischer is the internal type used for Fischer
+type Fischer = v1alpha1.Fischer
+
+// FischerList is the internal type used for FischerList
+type FischerList = v1alpha1.FischerList
+
+// Flunder is the internal type used for Flunder
+type Flunder = v1alpha1.Flunder
+
+// FlunderList is the internal type used for FlunderList
+type FlunderList = v1alpha1.FlunderList

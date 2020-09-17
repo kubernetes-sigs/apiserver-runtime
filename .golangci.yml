@@ -4,6 +4,7 @@ run:
   skip-dirs:
     - "pkg/generated"
     - "internal/sample-apiserver"
+    - "internal/example"
   skip-files:
     - "zz_generated.*"
 

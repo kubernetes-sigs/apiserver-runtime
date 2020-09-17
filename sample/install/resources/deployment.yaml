@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apiserver
+  namespace: sample-system # {"$kpt-set":"namespace"}
+  labels:
+    apiserver: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      apiserver: "true"
+  template:
+    metadata:
+      labels:
+        apiserver: "true"
+    spec:
+      serviceAccountName: apiserver
+      containers:
+      - name: apiserver
+        image: apiserver-runtime-sample:v0.0.0 # {"$kpt-set":"image"}
+        imagePullPolicy: Never
+        args: ["--etcd-servers=http://localhost:2379"]
+      - name: etcd
+        image: quay.io/coreos/etcd:v3.4.9

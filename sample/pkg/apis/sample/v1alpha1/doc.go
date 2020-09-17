@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2017 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,6 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package apiserver_runtime contains libraries building Kubernetes style apiservers.
-// nolint:stylecheck,golint
-package apiserver_runtime
+// +k8s:openapi-gen=true
+// +k8s:deepcopy-gen=package
+// +k8s:conversion-gen=sigs.k8s.io/apiserver-runtime/sample/pkg/apis/sample
+// +k8s:defaulter-gen=TypeMeta
+// +groupName=sample.k8s.com
+
+// Package v1alpha1 is the v1alpha1 version of the API.
+package v1alpha1 // import "sigs.k8s.io/apiserver-runtime/sample/pkg/apis/sample/v1alpha1"

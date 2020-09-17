@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: sample-system # {"$kpt-set":"namespace"}
+resources:
+- resources/apiservice.yaml
+- resources/auth-delegator.yaml
+- resources/deployment.yaml
+- resources/ns.yaml
+- resources/rbac.yaml
+- resources/rbac-bind.yaml
+- resources/sa.yaml
+- resources/service.yaml
