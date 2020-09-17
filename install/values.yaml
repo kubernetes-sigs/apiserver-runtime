@@ -1,0 +1,10 @@
+apiVersion: kubebuilder.k8s.io/v1alpha1
+kind: AggregatedAPI
+metadata:
+  annotations:
+    config.kubernetes.io/function: 'starlark: {path: reconcile.star, name: API}'
+values:
+  name: example
+  image: sample:v0.0.0
+  apiVersions:
+  - sample.k8s.com/v1alpha1
