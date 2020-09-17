@@ -7,6 +7,10 @@ apiserver-runtime provides libraries for building on top of the Kubernetes apise
 
 apiserver-runtime is developed under the [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) subproject.
 
+See the docs: [https://pkg.go.dev/sigs.k8s.io/apiserver-runtime/pkg/builder](https://pkg.go.dev/sigs.k8s.io/apiserver-runtime/pkg/builder)
+
+See the example: [sample/main.go](sample/main.go)
+
 ## Community, discussion, contribution, and support
 
 Learn how to engage with the Kubernetes community on the [community page](http://kubernetes.io/community/).

@@ -35,7 +35,9 @@ func Example() {
 	var _ resource.Object = &v1alpha1.ExampleResource{}
 
 	cmd, err := builder.APIServer.
-		// OpenAPI definitions should be generated using openapi-gen
+		// Definitions should be generated apiserver-runtime-gen:
+		// go getting sigs.k8s.io/tools/apiserver-runtime-gen and then add
+		// `//go:generate apiserver-runtime-gen` to your main package and run `go generate`
 		WithOpenAPIDefinitions("example", "v0.0.0", openapi.GetOpenAPIDefinitions).
 		WithResource(&v1alpha1.ExampleResource{}).
 		Build()
@@ -56,7 +58,9 @@ func ExampleServer_WithResource() {
 	var _ resource.Object = &v1beta1.ExampleResource{}
 
 	cmd, err := builder.APIServer.
-		// OpenAPI definitions should be generated using openapi-gen
+		// Definitions should be generated apiserver-runtime-gen:
+		// go getting sigs.k8s.io/tools/apiserver-runtime-gen and then add
+		// `//go:generate apiserver-runtime-gen` to your main package and run `go generate`
 		WithOpenAPIDefinitions("example", "v0.0.0", openapi.GetOpenAPIDefinitions).
 		// v1alpha1 will be the storage version because it was registered first
 		WithResource(&v1alpha1.ExampleResource{}).
@@ -78,7 +82,9 @@ func ExampleServer_WithResourceAndStrategy() {
 	var _ rest.Strategy = &strategy.ExampleStrategy{}
 
 	cmd, err := builder.APIServer.
-		// OpenAPI definitions should be generated using openapi-gen
+		// Definitions should be generated apiserver-runtime-gen:
+		// go getting sigs.k8s.io/tools/apiserver-runtime-gen and then add
+		// `//go:generate apiserver-runtime-gen` to your main package and run `go generate`
 		WithOpenAPIDefinitions("example", "v0.0.0", openapi.GetOpenAPIDefinitions).
 		// v1alpha1 will be the storage version because it was registered first, and objects will be stored
 		// using the provided Strategy
@@ -103,7 +109,9 @@ func ExampleServer_WithResourceAndHandler() {
 	var _ rest.ResourceHandlerProvider = handler.ExampleHandlerProvider
 
 	cmd, err := builder.APIServer.
-		// OpenAPI definitions should be generated using openapi-gen
+		// Definitions should be generated apiserver-runtime-gen:
+		// go getting sigs.k8s.io/tools/apiserver-runtime-gen and then add
+		// `//go:generate apiserver-runtime-gen` to your main package and run `go generate`
 		WithOpenAPIDefinitions("example", "v0.0.0", openapi.GetOpenAPIDefinitions).
 		// v1alpha1 will be the storage version because it was registered first
 		WithResourceAndHandler(&v1alpha1.ExampleResource{}, handler.ExampleHandlerProvider).
