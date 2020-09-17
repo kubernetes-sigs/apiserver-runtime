@@ -1,0 +1,52 @@
+name: Go
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.13
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Vet Pkg
+      run: go vet ./pkg/...
+
+    - name: Vet Tools
+      run: go vet ./tools/...
+
+    - name: Fmt Pkg
+      run: test -z $(go fmt ./pkg/...)
+
+    - name: Fmt Tools
+      run: test -z $(go fmt ./tools/...)
+
+    - run: go get github.com/golangci/golangci-lint/cmd/golangci-lint
+    
+    - name: GoLangCI-Lint Pkg
+      run: golangci-lint run ./pkg/...
+
+    - name: GoLangCI-Lint Tools
+      run: golangci-lint run ./tools/...
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test Pkg
+      run: go test -cover -v ./pkg/...
+
+    - name: Test Tools
+      run: go test -cover -v ./tools/...
