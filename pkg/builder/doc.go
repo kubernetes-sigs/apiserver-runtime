@@ -58,4 +58,15 @@ limitations under the License.
 // generators.
 //
 //    $ apiserver-runtime-gen -g client-gen -g deepcopy-gen -g informer-gen -g lister-gen -g openapi-gen
+//
+// Implementing Type Specific Logic
+//
+// * How an object is stored may be customized by either 1) implementing interfaces defined in
+// pkg/builder/resource/resourcestrategy or 2) providing a Strategy when registering the type with the builder.
+//
+// * How a request is handled may be customized by either 1) implementing the interfaces defined in
+// pkg/builder/resource/resourcerest or 2) providing a HandlerProvider when registering the type with the builder.
+//
+// If the go struct for the resource type implements the resource interfaces, they will automatically be used
+// when the resource type is registered with the builder.
 package builder
