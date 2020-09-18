@@ -19,7 +19,11 @@ apiserver-logs:
 	kubectl logs -l apiserver=true --container apiserver -n sample-system -f --tail 1000
 
 codegen:
+	(which apiserver-runtime-gen || go get sigs.k8s.io/apiserver-runtime/tools/apiserver-runtime-gen)
 	go generate
+
+genclients:
+	apiserver-runtime-gen -g client-gen -g deepcopy-gen -g informer-gen -g lister-gen -g openapi-gen
 
 fix:
 	go fix ./...
