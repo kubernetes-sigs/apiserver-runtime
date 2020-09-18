@@ -42,11 +42,13 @@ func runE(cmd *cobra.Command, args []string) error {
 		bin = filepath.Join(os.Getenv("HOME"), "go", "bin")
 	}
 	// install the generators
-	for _, gen := range generators {
-		// nolint:gosec
-		err := run(exec.Command("go", "get", path.Join("k8s.io/code-generator/cmd", gen)))
-		if err != nil {
-			return err
+	if install {
+		for _, gen := range generators {
+			// nolint:gosec
+			err := run(exec.Command("go", "get", path.Join("k8s.io/code-generator/cmd", gen)))
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -144,22 +146,24 @@ func doGen() error {
 }
 
 var (
-	generators []string
-	header     string
-	module     string
-	versions   []string
-	clean      bool
+	generators     []string
+	header         string
+	module         string
+	versions       []string
+	clean, install bool
 )
 
 func main() {
 	cmd.Flags().BoolVar(&clean, "clean", true, "Delete temporary directory for code generation.")
 
-	defaultGen := []string{"client-gen", "deepcopy-gen", "informer-gen", "lister-gen", "openapi-gen"}
-	cmd.Flags().StringSliceVar(&generators, "generators",
-		defaultGen, "Code generators to install and run.")
+	options := []string{"client-gen", "deepcopy-gen", "informer-gen", "lister-gen", "openapi-gen"}
+	defaultGen := []string{"deepcopy-gen", "openapi-gen"}
+	cmd.Flags().StringSliceVarP(&generators, "generator", "g",
+		defaultGen, fmt.Sprintf("Code generator to install and run.  Options: %v.", options))
 	defaultBoilerplate := filepath.Join("hack", "boilerplate.go.txt")
 	cmd.Flags().StringVar(&header, "go-header-file", defaultBoilerplate,
 		"File containing boilerplate header text. The string YEAR will be replaced with the current 4-digit year.")
+	cmd.Flags().BoolVar(&install, "install-generators", true, "Go get the generators")
 
 	var defaultModule string
 	why := exec.Command("go", "mod", "why")
