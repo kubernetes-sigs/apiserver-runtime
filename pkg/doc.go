@@ -14,12 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package apiserver_runtime contains libraries building Kubernetes style apiservers.
-//
-// Experimental
-//
-// Note that this package is experimental and a work in progress.  Do not rely on this project for production
-// without first contacting the maintainers at kubebuilder@googlegroups.com.
-//
-// nolint:stylecheck,golint
-package apiserver_runtime
+// Package pkg contains the apiserver-runtime libraries.
+package pkg
