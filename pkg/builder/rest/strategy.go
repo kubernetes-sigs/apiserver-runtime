@@ -85,9 +85,9 @@ func (DefaultStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object)
 
 // PrepareForUpdate calls the PrepareForUpdate function on obj if supported, otherwise does nothing.
 func (DefaultStrategy) PrepareForUpdate(ctx context.Context, obj, old runtime.Object) {
-	if v, ok := obj.(resource.StatusGetSetter); ok {
+	if v, ok := obj.(resource.ObjectWithStatus); ok {
 		// don't modify the status
-		v.CopyStatus(ctx, old)
+		v.SetStatus(old.(resource.ObjectWithStatus).GetStatus())
 	}
 	if v, ok := obj.(resourcestrategy.PrepareForUpdater); ok {
 		v.PrepareForUpdate(ctx, old)

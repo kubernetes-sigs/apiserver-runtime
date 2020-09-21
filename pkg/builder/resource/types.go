@@ -17,7 +17,6 @@ limitations under the License.
 package resource
 
 import (
-	"context"
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/conversion"
@@ -73,13 +72,11 @@ type MultiVersionObject interface {
 	ConvertFromStorageVersion(storageObj runtime.Object) error
 }
 
-// StatusGetSetter defines an interface for getting and setting the status for a resource.
-type StatusGetSetter interface {
+// ObjectWithStatus defines an interface for getting and setting the status sub-resource for a resource.
+type ObjectWithStatus interface {
 	Object
-	// CopyStatus copies the status from the argument to the object
-	CopyStatus(ctx context.Context, from runtime.Object)
-	// CopySpec copies the spec from the argument to the object
-	CopySpec(ctx context.Context, from runtime.Object)
+	SetStatus(statusSubResource runtime.Object)
+	GetStatus() runtime.Object
 }
 
 // AddToScheme returns a function to add the Objects to the scheme.
