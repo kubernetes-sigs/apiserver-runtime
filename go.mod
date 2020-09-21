@@ -8,7 +8,9 @@ require (
 	github.com/go-openapi/spec v0.19.3
 	github.com/golangci/golangci-lint v1.31.0
 	github.com/google/gofuzz v1.1.0
+	github.com/googleapis/gnostic v0.4.1
 	github.com/spf13/cobra v1.0.0
+	github.com/stretchr/testify v1.6.1
 	k8s.io/apimachinery v0.0.0-20200821171749-b63a0c883fbf
 	k8s.io/apiserver v0.0.0-20200904054905-b0396a2f976a
 	k8s.io/client-go v0.0.0-20200904053452-bb0bc934b5b4
