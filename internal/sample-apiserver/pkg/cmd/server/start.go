@@ -39,8 +39,8 @@ import (
 type WardleServerOptions struct {
 	RecommendedOptions *genericoptions.RecommendedOptions
 
-	StdOut                io.Writer
-	StdErr                io.Writer
+	StdOut io.Writer
+	StdErr io.Writer
 }
 
 // NewWardleServerOptions returns a new WardleServerOptions

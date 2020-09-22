@@ -20,8 +20,12 @@ import (
 	"context"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
+	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/util"
 )
+
+var _ Strategy = StatusSubResourceStrategy{}
 
 // StatusSubResourceStrategy defines a default Strategy for the status subresource.
 type StatusSubResourceStrategy struct {
@@ -29,8 +33,12 @@ type StatusSubResourceStrategy struct {
 }
 
 // PrepareForUpdate calls the PrepareForUpdate function on obj if supported, otherwise does nothing.
-func (StatusSubResourceStrategy) PrepareForUpdate(ctx context.Context, obj, old runtime.Object) {
-	if v, ok := obj.(resource.StatusGetSetter); ok {
-		v.CopySpec(ctx, old)
+func (s StatusSubResourceStrategy) PrepareForUpdate(ctx context.Context, obj, old runtime.Object) {
+	// should panic/fail-fast upon casting failure
+	statusObj := obj.(resource.ObjectWithStatus)
+	statusOld := old.(resource.ObjectWithStatus)
+	statusOld.SetStatus(statusObj.GetStatus())
+	if err := util.DeepCopy(statusOld, statusObj); err != nil {
+		utilruntime.HandleError(err)
 	}
 }

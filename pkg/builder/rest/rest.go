@@ -58,7 +58,7 @@ func New(obj resource.Object) ResourceHandlerProvider {
 }
 
 // NewStatus returns a new etcd backed request handler for the resource "status" subresource.
-func NewStatus(obj resource.StatusGetSetter) (
+func NewStatus(obj resource.ObjectWithStatus) (
 	parent resource.Object,
 	path string,
 	request resource.Object,
@@ -86,7 +86,7 @@ func NewWithStrategy(obj resource.Object, s Strategy) ResourceHandlerProvider {
 func NewStatusWithStrategy(obj resource.Object, s Strategy) ResourceHandlerProvider {
 	return func(scheme *runtime.Scheme, optsGetter generic.RESTOptionsGetter) (rest.Storage, error) {
 		gvr := obj.GetGroupVersionResource()
-		s = &StatusSubResourceStrategy{Strategy: s}
+		s = StatusSubResourceStrategy{Strategy: s}
 		return newStore(obj.New, obj.NewList, gvr, s, optsGetter, nil)
 	}
 }

@@ -20,7 +20,7 @@ import (
 	"k8s.io/apiserver/pkg/endpoints/openapi"
 	pkgserver "k8s.io/apiserver/pkg/server"
 	openapicommon "k8s.io/kube-openapi/pkg/common"
-	 "sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apiserver"
+	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apiserver"
 )
 
 var (
