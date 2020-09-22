@@ -35,7 +35,7 @@ type Object interface {
 	// Object allows the apiserver libraries to operate on the Object
 	runtime.Object
 
-	// ObjectMetaProvider provides the resources ObjectMeta and is required by the apiserver libraries.
+	// GetObjectMeta returns the object meta reference.
 	GetObjectMeta() *metav1.ObjectMeta
 
 	// Scoper is used to qualify the resource as either namespace scoped or non-namespace scoped.
@@ -55,6 +55,15 @@ type Object interface {
 	// for the API group an alias to this object.
 	// If false, the resource is expected to implement MultiVersionObject interface.
 	IsStorageVersion() bool
+}
+
+// ObjectList must be implemented by all resources' list object.
+type ObjectList interface {
+	// Object allows the apiserver libraries to operate on the Object
+	runtime.Object
+
+	// GetListMeta returns the list meta reference.
+	GetListMeta() *metav1.ListMeta
 }
 
 // MultiVersionObject should be implemented if the resource is not storage version and has multiple versions serving

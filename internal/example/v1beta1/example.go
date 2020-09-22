@@ -26,6 +26,7 @@ import (
 )
 
 var _ resource.Object = &ExampleResource{}
+var _ resource.ObjectList = &ExampleResourceList{}
 var _ resource.MultiVersionObject = &ExampleResource{}
 
 type ExampleResource struct {
@@ -49,24 +50,29 @@ func (e *ExampleResource) GetObjectMeta() *v1.ObjectMeta {
 	return &e.ObjectMeta
 }
 
-func (e ExampleResource) NamespaceScoped() bool {
+func (e *ExampleResource) NamespaceScoped() bool {
 	return true
 }
 
-func (e ExampleResource) New() runtime.Object {
+func (e *ExampleResource) New() runtime.Object {
 	return &ExampleResource{}
 }
 
-func (e ExampleResource) NewList() runtime.Object {
+func (e *ExampleResource) NewList() runtime.Object {
 	return &ExampleResourceList{}
 }
 
-func (e ExampleResource) GetGroupVersionResource() schema.GroupVersionResource {
+func (e *ExampleResource) GetGroupVersionResource() schema.GroupVersionResource {
 	return schema.GroupVersionResource{Group: "example.com", Version: "v1beta1", Resource: "exampleresources"}
 }
 
-func (e ExampleResource) IsStorageVersion() bool {
+func (e *ExampleResource) IsStorageVersion() bool {
 	return false
+}
+
+func (e *ExampleResourceList) GetListMeta() *metav1.ListMeta {
+	// implemented by code generation
+	return &e.ListMeta
 }
 
 func (e *ExampleResourceList) DeepCopyObject() runtime.Object {

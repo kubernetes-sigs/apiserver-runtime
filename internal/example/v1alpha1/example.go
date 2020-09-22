@@ -20,7 +20,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
 )
+
+var _ resource.Object = &ExampleResource{}
+var _ resource.ObjectList = &ExampleResourceList{}
 
 type ExampleResource struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -61,6 +65,11 @@ func (e ExampleResource) GetGroupVersionResource() schema.GroupVersionResource {
 
 func (e ExampleResource) IsStorageVersion() bool {
 	return true
+}
+
+func (e *ExampleResourceList) GetListMeta() *metav1.ListMeta {
+	// implemented by code generation
+	return &e.ListMeta
 }
 
 func (e *ExampleResourceList) DeepCopyObject() runtime.Object {
