@@ -29,6 +29,7 @@ import (
 )
 
 var _ resource.Object = &Flunder{}
+var _ resource.ObjectList = &FlunderList{}
 var _ resourcestrategy.Validater = &Flunder{}
 var _ resourcestrategy.ValidateUpdater = &Flunder{}
 

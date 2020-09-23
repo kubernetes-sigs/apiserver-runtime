@@ -97,3 +97,16 @@ type Watcher = rest.Watcher
 
 // StandardStorage defines the standard endpoints for resources.
 type StandardStorage = rest.StandardStorage
+
+// FieldsIndexer indices resources by certain fields at the server-side.
+// TODO: implement it
+type FieldsIndexer interface {
+	IndexingFields() []string
+	GetField(fieldName string) string
+}
+
+// LabelsIndexer indices resources by their labels at the server-side.
+// TODO: implement it
+type LabelsIndexer interface {
+	IndexingLabelKeys() []string
+}

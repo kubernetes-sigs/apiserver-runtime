@@ -24,6 +24,7 @@ import (
 )
 
 var _ resource.Object = &Fischer{}
+var _ resource.ObjectList = &FischerList{}
 
 // +genclient
 // +genclient:nonNamespaced

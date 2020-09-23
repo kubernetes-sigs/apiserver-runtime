@@ -137,7 +137,7 @@ func (a *Server) WithResource(obj resource.Object) *Server {
 	_ = a.forGroupVersionResource(gvr, obj, rest.New(obj))
 
 	// automatically create status subresource if the object implements the status interface
-	if sgs, ok := obj.(resource.ObjectWithStatus); ok {
+	if sgs, ok := obj.(resource.ObjectWithStatusSubResource); ok {
 		st := gvr.GroupVersion().WithResource(gvr.Resource + "/status")
 		if s, found := a.storage[st.GroupResource()]; found {
 			_ = a.forGroupVersionResource(st, obj, s.Get)
@@ -162,7 +162,7 @@ func (a *Server) WithResourceAndStrategy(obj resource.Object, strategy rest.Stra
 	_ = a.forGroupVersionResource(gvr, obj, rest.NewWithStrategy(obj, strategy))
 
 	// automatically create status subresource if the object implements the status interface
-	if _, ok := obj.(resource.ObjectWithStatus); ok {
+	if _, ok := obj.(resource.ObjectWithStatusSubResource); ok {
 		st := gvr.GroupVersion().WithResource(gvr.Resource + "/status")
 		_ = a.forGroupVersionResource(st, obj, rest.NewStatusWithStrategy(obj, strategy))
 	}
@@ -197,7 +197,7 @@ func (a *Server) WithResourceAndStorage(obj resource.Object, fn rest.StoreFn) *S
 	_ = a.forGroupVersionResource(gvr, obj, rest.NewWithFn(obj, fn))
 
 	// automatically create status subresource if the object implements the status interface
-	if _, ok := obj.(resource.ObjectWithStatus); ok {
+	if _, ok := obj.(resource.ObjectWithStatusSubResource); ok {
 		st := gvr.GroupVersion().WithResource(gvr.Resource + "/status")
 		_ = a.forGroupVersionResource(st, obj, rest.NewStatusWithFn(obj, fn))
 	}

@@ -35,8 +35,8 @@ type StatusSubResourceStrategy struct {
 // PrepareForUpdate calls the PrepareForUpdate function on obj if supported, otherwise does nothing.
 func (s StatusSubResourceStrategy) PrepareForUpdate(ctx context.Context, obj, old runtime.Object) {
 	// should panic/fail-fast upon casting failure
-	statusObj := obj.(resource.ObjectWithStatus)
-	statusOld := old.(resource.ObjectWithStatus)
+	statusObj := obj.(resource.ObjectWithStatusSubResource)
+	statusOld := old.(resource.ObjectWithStatusSubResource)
 	statusOld.SetStatus(statusObj.GetStatus())
 	if err := util.DeepCopy(statusOld, statusObj); err != nil {
 		utilruntime.HandleError(err)
