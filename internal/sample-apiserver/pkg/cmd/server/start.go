@@ -22,7 +22,6 @@ import (
 	"net"
 
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apiserver/pkg/features"
@@ -44,18 +43,18 @@ type WardleServerOptions struct {
 }
 
 // NewWardleServerOptions returns a new WardleServerOptions
-func NewWardleServerOptions(out, errOut io.Writer, version schema.GroupVersion) *WardleServerOptions {
+func NewWardleServerOptions(out, errOut io.Writer, versions ...schema.GroupVersion) *WardleServerOptions {
 	// change: apiserver-runtime
 	o := &WardleServerOptions{
 		RecommendedOptions: genericoptions.NewRecommendedOptions(
 			getEctdPath(),
-			apiserver.Codecs.LegacyCodec(version),
+			apiserver.Codecs.LegacyCodec(versions...),
 		),
 
 		StdOut: out,
 		StdErr: errOut,
 	}
-	o.RecommendedOptions.Etcd.StorageConfig.EncodeVersioner = runtime.NewMultiGroupVersioner(version, schema.GroupKind{Group: version.Group})
+	o.RecommendedOptions.Etcd.StorageConfig.EncodeVersioner = schema.GroupVersions(versions)
 	return o
 }
 

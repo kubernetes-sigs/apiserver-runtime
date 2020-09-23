@@ -93,7 +93,7 @@ func (cfg *Config) Complete() CompletedConfig {
 
 // New returns a new instance of WardleServer from the given config.
 func (c completedConfig) New() (*WardleServer, error) {
-	genericServer, err := c.GenericConfig.New(GroupName+"-apiserver", genericapiserver.NewEmptyDelegate())
+	genericServer, err := c.GenericConfig.New("sample-apiserver", genericapiserver.NewEmptyDelegate())
 	if err != nil {
 		return nil, err
 	}
@@ -104,8 +104,6 @@ func (c completedConfig) New() (*WardleServer, error) {
 	s := &WardleServer{
 		GenericAPIServer: genericServer,
 	}
-
-	apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(GroupName, Scheme, metav1.ParameterCodec, Codecs)
 
 	// change: apiserver-runtime
 	// v1alpha1storage := map[string]rest.Storage{}
@@ -118,10 +116,14 @@ func (c completedConfig) New() (*WardleServer, error) {
 	// apiGroupInfo.VersionedResourcesStorageMap["v1beta1"] = v1beta1storage
 
 	// Add new APIs through inserting into APIs
-	apiGroupInfo.VersionedResourcesStorageMap, err = BuildStorageMap(Scheme, c.GenericConfig.RESTOptionsGetter)
-
-	if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
+	apiGroups, err := BuildAPIGroupInfos(Scheme, c.GenericConfig.RESTOptionsGetter)
+	if err != nil {
 		return nil, err
+	}
+	for _, apiGroup := range apiGroups {
+		if err := s.GenericAPIServer.InstallAPIGroup(apiGroup); err != nil {
+			return nil, err
+		}
 	}
 
 	return s, nil

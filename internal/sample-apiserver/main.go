@@ -40,7 +40,6 @@ func main() {
 	logs.InitLogs()
 	defer logs.FlushLogs()
 
-	apiserver.GroupName = "wardle.example.com"
 	apiserver.APIs[v1alpha1.SchemeGroupVersion.WithResource("flunders")] = func(s *runtime.Scheme, g generic.RESTOptionsGetter) (rest.Storage, error) {
 		return wardleregistry.RESTInPeace(flunderstorage.NewREST(s, g)), nil
 	}

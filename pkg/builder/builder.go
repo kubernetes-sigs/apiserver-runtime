@@ -26,6 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apiserver/pkg/registry/generic"
 	regsitryrest "k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
@@ -46,7 +47,6 @@ var APIServer = &Server{
 // Server builds a new apiserver for a single API group
 type Server struct {
 	errs                 []error
-	group                string
 	storage              map[schema.GroupResource]*singletonProvider
 	groupVersions        map[schema.GroupVersion]bool
 	orderedGroupVersions []schema.GroupVersion
@@ -277,10 +277,6 @@ func (a *Server) WithSubResourceAndHandler(
 
 // WithSchemeInstallers registers functions to install resource types into the Scheme.
 func (a *Server) withGroupVersions(versions ...schema.GroupVersion) *Server {
-	if a.group == "" && len(versions) > 0 {
-		a.group = versions[0].Group
-		apiserver.GroupName = a.group
-	}
 	if a.groupVersions == nil {
 		a.groupVersions = map[schema.GroupVersion]bool{}
 	}
@@ -321,9 +317,25 @@ func (a *Server) Build() (*Command, error) {
 	a.schemes = append(a.schemes, apiserver.Scheme)
 	a.schemeBuilder.Register(
 		func(scheme *runtime.Scheme) error {
-			err := scheme.SetVersionPriority(a.orderedGroupVersions...)
-			if err != nil {
-				return err
+			groupVersions := make(map[string]sets.String)
+			for gvr := range apiserver.APIs {
+				if groupVersions[gvr.Group] == nil {
+					groupVersions[gvr.Group] = sets.NewString()
+				}
+				groupVersions[gvr.Group].Insert(gvr.Version)
+			}
+			for g, versions := range groupVersions {
+				gvs := []schema.GroupVersion{}
+				for _, v := range versions.List() {
+					gvs = append(gvs, schema.GroupVersion{
+						Group:   g,
+						Version: v,
+					})
+				}
+				err := scheme.SetVersionPriority(gvs...)
+				if err != nil {
+					return err
+				}
 			}
 			for i := range a.orderedGroupVersions {
 				metav1.AddToGroupVersion(scheme, a.orderedGroupVersions[i])
@@ -340,7 +352,7 @@ func (a *Server) Build() (*Command, error) {
 	if len(a.errs) != 0 {
 		return nil, errs{list: a.errs}
 	}
-	o := server.NewWardleServerOptions(os.Stdout, os.Stderr, a.orderedGroupVersions[0])
+	o := server.NewWardleServerOptions(os.Stdout, os.Stderr, a.orderedGroupVersions...)
 	cmd := server.NewCommandStartServer(o, genericapiserver.SetupSignalHandler())
 	cmd.Flags().AddGoFlagSet(flag.CommandLine)
 	return cmd, nil
