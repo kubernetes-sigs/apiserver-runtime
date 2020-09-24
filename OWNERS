@@ -1,11 +1,11 @@
 # See the OWNERS docs at https://go.k8s.io/owners
 
 approvers:
-  - kubebuilder-admins
-  - kubebuilder-approvers
-  - yue9944882
+- kubebuilder-admins
+- kubebuilder-approvers
+- yue9944882
 reviewers:
-  - kubebuilder-admins
-  - kubebuilder-approvers
-  - kubebuilder-reviewers
-  - yue9944882
+- kubebuilder-admins
+- kubebuilder-approvers
+- kubebuilder-reviewers
+- yue9944882
