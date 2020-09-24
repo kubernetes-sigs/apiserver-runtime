@@ -1,9 +1,12 @@
 # See the OWNERS docs at https://go.k8s.io/owners
 
 approvers:
-  - kubebuilder-admins
-  - kubebuilder-approvers
+ - DirectXMan12
+ - gabbifish
+ - pwittrock
+ - yue9944882
 reviewers:
-  - kubebuilder-admins
-  - kubebuilder-reviewers
-  - kubebuilder-approvers
+ - DirectXMan12
+ - gabbifish
+ - pwittrock
+ - yue9944882
