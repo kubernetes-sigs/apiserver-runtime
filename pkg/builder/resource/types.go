@@ -27,6 +27,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -35,7 +36,7 @@ type Object interface {
 	// Object allows the apiserver libraries to operate on the Object
 	runtime.Object
 
-	// ObjectMetaProvider provides the resources ObjectMeta and is required by the apiserver libraries.
+	// GetObjectMeta returns the object meta reference.
 	GetObjectMeta() *metav1.ObjectMeta
 
 	// Scoper is used to qualify the resource as either namespace scoped or non-namespace scoped.
@@ -57,6 +58,15 @@ type Object interface {
 	IsStorageVersion() bool
 }
 
+// ObjectList must be implemented by all resources' list object.
+type ObjectList interface {
+	// Object allows the apiserver libraries to operate on the Object
+	runtime.Object
+
+	// GetListMeta returns the list meta reference.
+	GetListMeta() *metav1.ListMeta
+}
+
 // MultiVersionObject should be implemented if the resource is not storage version and has multiple versions serving
 // at the server.
 type MultiVersionObject interface {
@@ -72,11 +82,26 @@ type MultiVersionObject interface {
 	ConvertFromStorageVersion(storageObj runtime.Object) error
 }
 
-// ObjectWithStatus defines an interface for getting and setting the status sub-resource for a resource.
-type ObjectWithStatus interface {
+// ObjectWithStatusSubResource defines an interface for getting and setting the status sub-resource for a resource.
+type ObjectWithStatusSubResource interface {
 	Object
-	SetStatus(statusSubResource runtime.Object)
-	GetStatus() runtime.Object
+	SetStatus(statusSubResource interface{})
+	GetStatus() (statusSubResource interface{})
+}
+
+// ObjectWithScaleSubResource defines an interface for getting and setting the scale sub-resource for a resource.
+type ObjectWithScaleSubResource interface {
+	Object
+	SetScale(scaleSubResource *autoscalingv1.Scale)
+	GetScale() (scaleSubResource *autoscalingv1.Scale)
+}
+
+// ObjectWithArbitrarySubResource adds arbitrary subresources to the resource.
+type ObjectWithArbitrarySubResource interface {
+	Object
+	SubResourceNames() []string
+	SetSubResource(subResourceName string, subResource interface{})
+	GetSubResource(subResourceName string) (subResource interface{})
 }
 
 // AddToScheme returns a function to add the Objects to the scheme.

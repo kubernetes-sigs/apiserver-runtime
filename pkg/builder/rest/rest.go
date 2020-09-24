@@ -58,7 +58,7 @@ func New(obj resource.Object) ResourceHandlerProvider {
 }
 
 // NewStatus returns a new etcd backed request handler for the resource "status" subresource.
-func NewStatus(obj resource.ObjectWithStatus) (
+func NewStatus(obj resource.ObjectWithStatusSubResource) (
 	parent resource.Object,
 	path string,
 	request resource.Object,

@@ -17,8 +17,10 @@ limitations under the License.
 package apiserver
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/sets"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/rest"
 	pkgserver "k8s.io/apiserver/pkg/server"
@@ -27,25 +29,40 @@ import (
 type StorageProvider func(s *runtime.Scheme, g genericregistry.RESTOptionsGetter) (rest.Storage, error)
 
 var (
-	GroupName           = "example.com"
 	APIs                = map[schema.GroupVersionResource]StorageProvider{}
 	GenericAPIServerFns []func(*pkgserver.GenericAPIServer) *pkgserver.GenericAPIServer
 )
 
-// buildStorageMap gets all of the registered APIs
-func BuildStorageMap(s *runtime.Scheme, g genericregistry.RESTOptionsGetter) (map[string]map[string]rest.Storage, error) {
-	apis := map[string]map[string]rest.Storage{}
-	var err error
-	for k, v := range APIs {
-		if _, found := apis[k.Version]; !found {
-			apis[k.Version] = map[string]rest.Storage{}
+func BuildAPIGroupInfos(s *runtime.Scheme, g genericregistry.RESTOptionsGetter) ([]*pkgserver.APIGroupInfo, error) {
+	resourcesByGroupVersion := make(map[schema.GroupVersion]sets.String)
+	groups := sets.NewString()
+	for gvr := range APIs {
+		groups.Insert(gvr.Group)
+		if resourcesByGroupVersion[gvr.GroupVersion()] == nil {
+			resourcesByGroupVersion[gvr.GroupVersion()] = sets.NewString()
 		}
-		apis[k.Version][k.Resource], err = v(s, g)
-		if err != nil {
-			return nil, err
-		}
+		resourcesByGroupVersion[gvr.GroupVersion()].Insert(gvr.Resource)
 	}
-	return apis, nil
+	apiGroups := []*pkgserver.APIGroupInfo{}
+	for _, group := range groups.List() {
+		apis := map[string]map[string]rest.Storage{}
+		var err error
+		for gvr, storageProviderFunc := range APIs {
+			if gvr.Group == group {
+				if _, found := apis[gvr.Version]; !found {
+					apis[gvr.Version] = map[string]rest.Storage{}
+				}
+				apis[gvr.Version][gvr.Resource], err = storageProviderFunc(s, g)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+		apiGroupInfo := pkgserver.NewDefaultAPIGroupInfo(group, Scheme, metav1.ParameterCodec, Codecs)
+		apiGroupInfo.VersionedResourcesStorageMap = apis
+		apiGroups = append(apiGroups, &apiGroupInfo)
+	}
+	return apiGroups, nil
 }
 
 func ApplyGenericAPIServerFns(in *pkgserver.GenericAPIServer) *pkgserver.GenericAPIServer {

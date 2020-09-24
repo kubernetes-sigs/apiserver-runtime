@@ -56,5 +56,6 @@ func SetOpenAPIDefinitions(name, version string, defs openapicommon.GetOpenAPIDe
 }
 
 func getEctdPath() string {
-	return "/registry/" + apiserver.GroupName
+	// TODO: make this configurable
+	return "/registry/sample-apiserver"
 }
