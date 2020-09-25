@@ -15,15 +15,14 @@ import (
 // NewMysqlStorageProvider replaces underlying persistent layer (which by default is etcd) w/ MySQL.
 // An example of storaing example resource to Mysql will be:
 //
-// builder.APIServer.
-// 		WithResourceAndStorage(&v1alpha1.ExampleResource{}, mysql.NewMysqlStorageProvider(
-//			"", // mysql host name		e.g. "127.0.0.1"
-//			0,  // mysql password 		e.g. 3306
-//			"", // mysql username 		e.g. "mysql"
-//			"", // mysql password 		e.g. "password"
-//			"", // mysql database name 	e.g. "mydb"
-//		)).
-// 		Build()
+//     builder.APIServer.
+//       WithResourceAndStorage(&v1alpha1.ExampleResource{}, mysql.NewMysqlStorageProvider(
+//             "", // mysql host name		e.g. "127.0.0.1"
+//             0,  // mysql password 		e.g. 3306
+//             "", // mysql username 		e.g. "mysql"
+//             "", // mysql password 		e.g. "password"
+//             "", // mysql database name 	e.g. "mydb"
+//             )).Build()
 //
 func NewMysqlStorageProvider(host string, port int32, username, password, database string) builderrest.StoreFn {
 	return func(s *genericregistry.Store, options *generic.StoreOptions) {
