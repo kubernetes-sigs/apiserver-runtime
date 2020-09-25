@@ -41,7 +41,7 @@ type StaticHandlerProvider struct {
 
 // Get returns itself as the handler
 func (p StaticHandlerProvider) Get(s *runtime.Scheme, g generic.RESTOptionsGetter) (rest.Storage, error) {
-	return p, nil
+	return p.Storage, nil
 }
 
 // New returns a new etcd backed request handler for the resource.
