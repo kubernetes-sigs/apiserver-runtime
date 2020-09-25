@@ -28,7 +28,7 @@ func main() {
 	var _ resource.Object = &v1beta1.ExampleResource{}
 
 	cmd, err := builder.APIServer.
-		DisableDelegateAuth().
+		SetDelegateAuthOptional().
 		// v1alpha1 will be the storage version because it was registered first
 		WithResource(&v1alpha1.ExampleResource{}).
 		// v1beta1 objects will be converted to v1alpha1 versions before being stored
