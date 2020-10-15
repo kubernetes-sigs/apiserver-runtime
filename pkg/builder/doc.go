@@ -42,7 +42,7 @@ limitations under the License.
 //
 // Install the code generators (from your module):
 //
-//    $ go get sigs.k8s.io/tools/apiserver-runtime-gen
+//    $ go get sigs.k8s.io/apiserver-runtime/tools/apiserver-runtime-gen
 //    $ apiserver-runtime-gen --install
 //
 // Add the code generation tag to you main package:

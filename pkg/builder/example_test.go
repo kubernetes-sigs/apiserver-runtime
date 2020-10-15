@@ -36,7 +36,7 @@ func Example() {
 
 	cmd, err := builder.APIServer.
 		// Definitions should be generated apiserver-runtime-gen:
-		// go getting sigs.k8s.io/tools/apiserver-runtime-gen and then add
+		// go get sigs.k8s.io/apiserver-runtime/tools/apiserver-runtime-gen and then add
 		// `//go:generate apiserver-runtime-gen` to your main package and run `go generate`
 		WithOpenAPIDefinitions("example", "v0.0.0", openapi.GetOpenAPIDefinitions).
 		WithResource(&v1alpha1.ExampleResource{}).
@@ -59,7 +59,7 @@ func ExampleServer_WithResource() {
 
 	cmd, err := builder.APIServer.
 		// Definitions should be generated apiserver-runtime-gen:
-		// go getting sigs.k8s.io/tools/apiserver-runtime-gen and then add
+		// go get sigs.k8s.io/apiserver-runtime/tools/apiserver-runtime-gen and then add
 		// `//go:generate apiserver-runtime-gen` to your main package and run `go generate`
 		WithOpenAPIDefinitions("example", "v0.0.0", openapi.GetOpenAPIDefinitions).
 		// v1alpha1 will be the storage version because it was registered first
@@ -83,7 +83,7 @@ func ExampleServer_WithResourceAndStrategy() {
 
 	cmd, err := builder.APIServer.
 		// Definitions should be generated apiserver-runtime-gen:
-		// go getting sigs.k8s.io/tools/apiserver-runtime-gen and then add
+		// go get sigs.k8s.io/apiserver-runtime/tools/apiserver-runtime-gen and then add
 		// `//go:generate apiserver-runtime-gen` to your main package and run `go generate`
 		WithOpenAPIDefinitions("example", "v0.0.0", openapi.GetOpenAPIDefinitions).
 		// v1alpha1 will be the storage version because it was registered first, and objects will be stored
@@ -110,7 +110,7 @@ func ExampleServer_WithResourceAndHandler() {
 
 	cmd, err := builder.APIServer.
 		// Definitions should be generated apiserver-runtime-gen:
-		// go getting sigs.k8s.io/tools/apiserver-runtime-gen and then add
+		// go get sigs.k8s.io/apiserver-runtime/tools/apiserver-runtime-gen and then add
 		// `//go:generate apiserver-runtime-gen` to your main package and run `go generate`
 		WithOpenAPIDefinitions("example", "v0.0.0", openapi.GetOpenAPIDefinitions).
 		// v1alpha1 will be the storage version because it was registered first
