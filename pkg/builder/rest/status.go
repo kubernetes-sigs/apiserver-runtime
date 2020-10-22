@@ -37,7 +37,8 @@ func (s StatusSubResourceStrategy) PrepareForUpdate(ctx context.Context, obj, ol
 	// should panic/fail-fast upon casting failure
 	statusObj := obj.(resource.ObjectWithStatusSubResource)
 	statusOld := old.(resource.ObjectWithStatusSubResource)
-	statusOld.SetStatus(statusObj.GetStatus())
+	// only modifies status
+	statusObj.GetStatus().CopyTo(statusOld)
 	if err := util.DeepCopy(statusOld, statusObj); err != nil {
 		utilruntime.HandleError(err)
 	}

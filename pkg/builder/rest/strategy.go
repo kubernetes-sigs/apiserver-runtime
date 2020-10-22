@@ -87,7 +87,7 @@ func (DefaultStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object)
 func (DefaultStrategy) PrepareForUpdate(ctx context.Context, obj, old runtime.Object) {
 	if v, ok := obj.(resource.ObjectWithStatusSubResource); ok {
 		// don't modify the status
-		v.SetStatus(old.(resource.ObjectWithStatusSubResource).GetStatus())
+		old.(resource.ObjectWithStatusSubResource).GetStatus().CopyTo(v)
 	}
 	if v, ok := obj.(resourcestrategy.PrepareForUpdater); ok {
 		v.PrepareForUpdate(ctx, old)
