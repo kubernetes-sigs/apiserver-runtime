@@ -17,6 +17,7 @@ limitations under the License.
 package server
 
 import (
+	"github.com/spf13/pflag"
 	"k8s.io/apiserver/pkg/endpoints/openapi"
 	pkgserver "k8s.io/apiserver/pkg/server"
 	openapicommon "k8s.io/kube-openapi/pkg/common"
@@ -27,6 +28,7 @@ var (
 	EtcdPath              string
 	RecommendedConfigFns  []func(*pkgserver.RecommendedConfig) *pkgserver.RecommendedConfig
 	ServerOptionsFns      []func(server *ServerOptions) *ServerOptions
+	FlagsFns              []func(fs *pflag.FlagSet) *pflag.FlagSet
 	NewCommandStartServer = NewCommandStartWardleServer
 )
 
@@ -44,6 +46,13 @@ func ApplyRecommendedConfigFns(in *pkgserver.RecommendedConfig) *pkgserver.Recom
 		in = RecommendedConfigFns[i](in)
 	}
 	return in
+}
+
+func ApplyFlagsFns(fs *pflag.FlagSet) *pflag.FlagSet {
+	for i := range FlagsFns {
+		fs = FlagsFns[i](fs)
+	}
+	return fs
 }
 
 func SetOpenAPIDefinitions(name, version string, defs openapicommon.GetOpenAPIDefinitions) {
