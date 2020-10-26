@@ -1,2 +1,3 @@
 artifacts
 .idea/
+apiserver.local.config/**

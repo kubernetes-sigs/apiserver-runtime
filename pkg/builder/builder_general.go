@@ -18,6 +18,7 @@ func (a *Server) WithServerFns(fns ...func(server *GenericAPIServer) *GenericAPI
 	return a
 }
 
+// WithFlagFns sets functions to customize the flags for the compiled binary.
 func (a *Server) WithFlagFns(fns ...func(set *pflag.FlagSet) *pflag.FlagSet) *Server {
 	server.FlagsFns = append(server.FlagsFns, fns...)
 	return a
