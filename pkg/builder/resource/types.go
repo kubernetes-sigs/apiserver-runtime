@@ -82,11 +82,22 @@ type MultiVersionObject interface {
 	ConvertFromStorageVersion(storageObj runtime.Object) error
 }
 
+// StatusSubResource defines interface for registering status subresource to a parent resource.
+type StatusSubResource interface {
+	// CopyTo copies the content of the status subresource to a parent resource.
+	CopyTo(parent ObjectWithStatusSubResource)
+}
+
+// ArbitrarySubResource defines interface for registering arbitrary subresource to the parent resource.
+type ArbitrarySubResource interface {
+	Name() string
+	// TODO: fill the details for this interface.
+}
+
 // ObjectWithStatusSubResource defines an interface for getting and setting the status sub-resource for a resource.
 type ObjectWithStatusSubResource interface {
 	Object
-	SetStatus(statusSubResource interface{})
-	GetStatus() (statusSubResource interface{})
+	GetStatus() (statusSubResource StatusSubResource)
 }
 
 // ObjectWithScaleSubResource defines an interface for getting and setting the scale sub-resource for a resource.
@@ -99,9 +110,7 @@ type ObjectWithScaleSubResource interface {
 // ObjectWithArbitrarySubResource adds arbitrary subresources to the resource.
 type ObjectWithArbitrarySubResource interface {
 	Object
-	SubResourceNames() []string
-	SetSubResource(subResourceName string, subResource interface{})
-	GetSubResource(subResourceName string) (subResource interface{})
+	ArbitrarySubResources() []ArbitrarySubResource
 }
 
 // AddToScheme returns a function to add the Objects to the scheme.

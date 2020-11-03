@@ -127,7 +127,6 @@ func (a *Server) WithResourceAndStorage(obj resource.Object, fn rest.StoreFn) *S
 		st := gvr.GroupVersion().WithResource(gvr.Resource + "/status")
 		_ = a.forGroupVersionResource(st, obj, rest.NewStatusWithFn(obj, fn))
 	}
-
 	return a
 }
 
