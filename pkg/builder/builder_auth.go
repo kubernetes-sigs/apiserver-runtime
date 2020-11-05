@@ -6,17 +6,6 @@ import (
 	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/cmd/server"
 )
 
-// SetDelegateAuthOptional makes delegated authentication and authorization optional, otherwise
-// the apiserver won't failing upon missing delegated auth configurations.
-func (a *Server) SetDelegateAuthOptional() *Server {
-	server.ServerOptionsFns = append(server.ServerOptionsFns, func(o *ServerOptions) *ServerOptions {
-		o.RecommendedOptions.Authentication.RemoteKubeConfigFileOptional = true
-		o.RecommendedOptions.Authorization.RemoteKubeConfigFileOptional = true
-		return o
-	})
-	return a
-}
-
 // DisableAuthorization disables delegated authentication and authorization
 func (a *Server) DisableAuthorization() *Server {
 	server.ServerOptionsFns = append(server.ServerOptionsFns, func(o *ServerOptions) *ServerOptions {
@@ -51,6 +40,11 @@ func (a *Server) WithLocalDebugExtension() *Server {
 				"authorizing the requests, this flag is only intended for debugging in your workstation "+
 				"and the apiserver will be crashing if its binding address is not 127.0.0.1.")
 		return fs
+	})
+	server.ServerOptionsFns = append(server.ServerOptionsFns, func(o *ServerOptions) *ServerOptions {
+		o.RecommendedOptions.Authentication.RemoteKubeConfigFileOptional = true
+		o.RecommendedOptions.Authorization.RemoteKubeConfigFileOptional = true
+		return o
 	})
 	return a
 }
