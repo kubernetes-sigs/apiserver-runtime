@@ -43,7 +43,6 @@ func (a *Server) WithLocalDebugExtension() *Server {
 	})
 	server.ServerOptionsFns = append(server.ServerOptionsFns, func(o *ServerOptions) *ServerOptions {
 		o.RecommendedOptions.Authentication.RemoteKubeConfigFileOptional = true
-		o.RecommendedOptions.Authorization.RemoteKubeConfigFileOptional = true
 		return o
 	})
 	return a

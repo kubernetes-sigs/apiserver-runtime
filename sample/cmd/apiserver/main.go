@@ -35,6 +35,7 @@ func main() {
 		WithResource(&v1alpha1.Flunder{}). // namespaced resource
 		WithResource(&v1alpha1.Fischer{}). // non-namespaced resource
 		WithResource(&v1alpha1.Fortune{}). // resource with custom rest.Storage implementation
+		WithLocalDebugExtension().
 		Execute()
 	if err != nil {
 		klog.Fatal(err)

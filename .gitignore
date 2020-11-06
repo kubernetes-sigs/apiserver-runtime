@@ -1,3 +1,6 @@
 artifacts
 .idea/
 apiserver.local.config/**
+sample/default.etcd/**
+sample/apiserver.local.config/**
+sample/bin/**

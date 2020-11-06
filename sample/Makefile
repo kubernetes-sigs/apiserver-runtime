@@ -43,3 +43,6 @@ test:
 
 vet:
 	go vet ./...
+
+local-run:
+	apiserver-boot run local --run=etcd,apiserver
