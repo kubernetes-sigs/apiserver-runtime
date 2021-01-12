@@ -32,7 +32,7 @@ apiserver-runtime is developed under the [kubebuilder](https://github.com/kubern
 
 See the docs: [https://pkg.go.dev/sigs.k8s.io/apiserver-runtime/pkg/builder](https://pkg.go.dev/sigs.k8s.io/apiserver-runtime/pkg/builder)
 
-See the example: [sample/main.go](sample/main.go)
+See the example: [sample/cmd/apiserver/main.go](sample/cmd/apiserver/main.go)
 
 ## Community, discussion, contribution, and support
 
