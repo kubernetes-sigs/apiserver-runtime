@@ -26,7 +26,7 @@ func (a *Server) WithLocalDebugExtension() *Server {
 		secureBindingAddr := options.RecommendedOptions.SecureServing.BindAddress.String()
 		if enablesLocalStandaloneDebugging {
 			if secureBindingAddr != "127.0.0.1" {
-				klog.Fatal(`the binding address must be "127.0.0.1" if --standalone-debug-mode is set`)
+				klog.Fatal(`--bind-address must be "127.0.0.1" if --standalone-debug-mode is set`)
 			}
 			options.RecommendedOptions.Authorization = nil
 			options.RecommendedOptions.CoreAPI = nil

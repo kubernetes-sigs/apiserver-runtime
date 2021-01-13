@@ -27,22 +27,8 @@ import (
 	"k8s.io/apiserver/pkg/registry/generic"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
-	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apiserver"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
 )
-
-// ResourceHandlerProvider provides a request handler for a resource
-type ResourceHandlerProvider = apiserver.StorageProvider
-
-// StaticHandlerProvider returns itself as the request handler.
-type StaticHandlerProvider struct {
-	rest.Storage
-}
-
-// Get returns itself as the handler
-func (p StaticHandlerProvider) Get(s *runtime.Scheme, g generic.RESTOptionsGetter) (rest.Storage, error) {
-	return p.Storage, nil
-}
 
 // New returns a new etcd backed request handler for the resource.
 func New(obj resource.Object) ResourceHandlerProvider {

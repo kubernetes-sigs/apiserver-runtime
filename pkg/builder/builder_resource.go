@@ -1,15 +1,29 @@
+/*
+Copyright 2020 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package builder
 
 import (
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	regsitryrest "k8s.io/apiserver/pkg/registry/rest"
 	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apiserver"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/resourcerest"
-	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/resourcestrategy"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/rest"
 )
 
@@ -44,32 +58,32 @@ func (a *Server) WithResource(obj resource.Object) *Server {
 
 	// reuse the storage if this resource has already been registered
 	if s, found := a.storage[gvr.GroupResource()]; found {
-		_ = a.forGroupVersionResource(gvr, obj, s.Get)
+		_ = a.forGroupVersionResource(gvr, s.Get)
 		return a
 	}
 
 	// If the type implements it's own storage, then use that
 	switch s := obj.(type) {
 	case resourcerest.Creator:
-		return a.forGroupVersionResource(gvr, obj, rest.StaticHandlerProvider{Storage: s.(regsitryrest.Storage)}.Get)
+		return a.forGroupVersionResource(gvr, rest.StaticHandlerProvider{Storage: s.(regsitryrest.Storage)}.Get)
 	case resourcerest.Updater:
-		return a.forGroupVersionResource(gvr, obj, rest.StaticHandlerProvider{Storage: s.(regsitryrest.Storage)}.Get)
+		return a.forGroupVersionResource(gvr, rest.StaticHandlerProvider{Storage: s.(regsitryrest.Storage)}.Get)
 	case resourcerest.Getter:
-		return a.forGroupVersionResource(gvr, obj, rest.StaticHandlerProvider{Storage: s.(regsitryrest.Storage)}.Get)
+		return a.forGroupVersionResource(gvr, rest.StaticHandlerProvider{Storage: s.(regsitryrest.Storage)}.Get)
 	case resourcerest.Lister:
-		return a.forGroupVersionResource(gvr, obj, rest.StaticHandlerProvider{Storage: s.(regsitryrest.Storage)}.Get)
+		return a.forGroupVersionResource(gvr, rest.StaticHandlerProvider{Storage: s.(regsitryrest.Storage)}.Get)
 	}
 
-	_ = a.forGroupVersionResource(gvr, obj, rest.New(obj))
+	_ = a.forGroupVersionResource(gvr, rest.New(obj))
 
 	// automatically create status subresource if the object implements the status interface
 	if sgs, ok := obj.(resource.ObjectWithStatusSubResource); ok {
 		st := gvr.GroupVersion().WithResource(gvr.Resource + "/status")
 		if s, found := a.storage[st.GroupResource()]; found {
-			_ = a.forGroupVersionResource(st, obj, s.Get)
+			_ = a.forGroupVersionResource(st, s.Get)
 		} else {
 			_, _, _, sp := rest.NewStatus(sgs)
-			_ = a.forGroupVersionResource(st, obj, sp)
+			_ = a.forGroupVersionResource(st, sp)
 		}
 	}
 	return a
@@ -85,12 +99,12 @@ func (a *Server) WithResourceAndStrategy(obj resource.Object, strategy rest.Stra
 	gvr := obj.GetGroupVersionResource()
 	a.schemeBuilder.Register(resource.AddToScheme(obj))
 
-	_ = a.forGroupVersionResource(gvr, obj, rest.NewWithStrategy(obj, strategy))
+	_ = a.forGroupVersionResource(gvr, rest.NewWithStrategy(obj, strategy))
 
 	// automatically create status subresource if the object implements the status interface
 	if _, ok := obj.(resource.ObjectWithStatusSubResource); ok {
 		st := gvr.GroupVersion().WithResource(gvr.Resource + "/status")
-		_ = a.forGroupVersionResource(st, obj, rest.NewStatusWithStrategy(obj, strategy))
+		_ = a.forGroupVersionResource(st, rest.NewStatusWithStrategy(obj, strategy))
 	}
 	return a
 }
@@ -105,7 +119,7 @@ func (a *Server) WithResourceAndStrategy(obj resource.Object, strategy rest.Stra
 func (a *Server) WithResourceAndHandler(obj resource.Object, sp rest.ResourceHandlerProvider) *Server {
 	gvr := obj.GetGroupVersionResource()
 	a.schemeBuilder.Register(resource.AddToScheme(obj))
-	return a.forGroupVersionResource(gvr, obj, sp)
+	return a.forGroupVersionResource(gvr, sp)
 }
 
 // WithResourceAndStorage registers the resource with the apiserver, applying fn to the storage for the resource
@@ -120,19 +134,19 @@ func (a *Server) WithResourceAndStorage(obj resource.Object, fn rest.StoreFn) *S
 	gvr := obj.GetGroupVersionResource()
 	a.schemeBuilder.Register(resource.AddToScheme(obj))
 
-	_ = a.forGroupVersionResource(gvr, obj, rest.NewWithFn(obj, fn))
+	_ = a.forGroupVersionResource(gvr, rest.NewWithFn(obj, fn))
 
 	// automatically create status subresource if the object implements the status interface
 	if _, ok := obj.(resource.ObjectWithStatusSubResource); ok {
 		st := gvr.GroupVersion().WithResource(gvr.Resource + "/status")
-		_ = a.forGroupVersionResource(st, obj, rest.NewStatusWithFn(obj, fn))
+		_ = a.forGroupVersionResource(st, rest.NewStatusWithFn(obj, fn))
 	}
 	return a
 }
 
 // forGroupVersionResource manually registers storage for a specific resource or subresource version.
 func (a *Server) forGroupVersionResource(
-	gvr schema.GroupVersionResource, obj runtime.Object, sp rest.ResourceHandlerProvider) *Server {
+	gvr schema.GroupVersionResource, sp rest.ResourceHandlerProvider) *Server {
 	// register the group version
 	a.withGroupVersions(gvr.GroupVersion())
 
@@ -142,14 +156,6 @@ func (a *Server) forGroupVersionResource(
 	if _, found := a.storage[gvr.GroupResource()]; !found {
 		a.storage[gvr.GroupResource()] = &singletonProvider{Provider: sp}
 	}
-
-	// add the defaulting function for this version to the scheme
-	if _, ok := obj.(resourcestrategy.Defaulter); ok {
-		apiserver.Scheme.AddTypeDefaultingFunc(obj, func(obj interface{}) {
-			obj.(resourcestrategy.Defaulter).Default()
-		})
-	}
-
 	// add the API with its storage
 	apiserver.APIs[gvr] = sp
 	return a
@@ -161,13 +167,13 @@ func (a *Server) forGroupVersionResource(
 // Note: WithSubResource does NOT register the request or parent with the SchemeBuilder.  If they were not registered
 // through a WithResource call, then this must be done manually with WithAdditionalSchemeInstallers.
 func (a *Server) WithSubResource(
-	parent resource.Object, subResourcePath string, request runtime.Object) *Server {
+	parent resource.Object, subResource resource.SubResource) *Server {
 	gvr := parent.GetGroupVersionResource()
-	gvr.Resource = gvr.Resource + "/" + subResourcePath
 
 	// reuse the storage if this resource has already been registered
 	if s, found := a.storage[gvr.GroupResource()]; found {
-		_ = a.forGroupVersionResource(gvr, request, s.Get)
+		subResourceGVR := gvr.GroupVersion().WithResource(gvr.Resource + "/" + subResource.SubResourceName())
+		_ = a.forGroupVersionResource(subResourceGVR, s.Get)
 	} else {
 		a.errs = append(a.errs, fmt.Errorf(
 			"subresources must be registered with a strategy or handler the first time they are registered"))
@@ -181,10 +187,10 @@ func (a *Server) WithSubResource(
 // Note: WithSubResource does NOT register the request or parent with the SchemeBuilder.  If they were not registered
 // through a WithResource call, then this must be done manually with WithAdditionalSchemeInstallers.
 func (a *Server) WithSubResourceAndStrategy(
-	parent resource.Object, subResourcePath string, request resource.Object, strategy rest.Strategy) *Server {
+	parent resource.Object, subResource resource.SubResource, strategy rest.Strategy) *Server {
 	gvr := parent.GetGroupVersionResource()
-	gvr.Resource = gvr.Resource + "/" + subResourcePath
-	return a.forGroupVersionResource(gvr, request, rest.NewWithStrategy(request, strategy))
+	gvr.Resource = gvr.Resource + "/" + subResource.SubResourceName()
+	return a.forGroupVersionResource(gvr, rest.NewSubResourceWithStrategy(parent, subResource, strategy))
 }
 
 // WithSubResourceAndHandler registers a request handler for the subresource rather than the default
@@ -193,11 +199,11 @@ func (a *Server) WithSubResourceAndStrategy(
 // Note: WithSubResource does NOT register the request or parent with the SchemeBuilder.  If they were not registered
 // through a WithResource call, then this must be done manually with WithAdditionalSchemeInstallers.
 func (a *Server) WithSubResourceAndHandler(
-	parent resource.Object, subResourcePath string, request runtime.Object, sp rest.ResourceHandlerProvider) *Server {
+	parent resource.Object, subResource resource.SubResource, sp rest.ResourceHandlerProvider) *Server {
 	gvr := parent.GetGroupVersionResource()
 	// add the subresource path
-	gvr.Resource = gvr.Resource + "/" + subResourcePath
-	return a.forGroupVersionResource(gvr, request, sp)
+	gvr.Resource = gvr.Resource + "/" + subResource.SubResourceName()
+	return a.forGroupVersionResource(gvr, sp)
 }
 
 // WithSchemeInstallers registers functions to install resource types into the Scheme.

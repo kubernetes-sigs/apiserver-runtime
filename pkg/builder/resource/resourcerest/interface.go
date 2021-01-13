@@ -16,7 +16,9 @@ limitations under the License.
 
 package resourcerest
 
-import "k8s.io/apiserver/pkg/registry/rest"
+import (
+	"k8s.io/apiserver/pkg/registry/rest"
+)
 
 // CategoriesProvider allows a resource to specify which groups of resources (categories) it's part of. Categories can
 // be used by API clients to refer to a batch of resources by using a single name (e.g. "all" could translate to "pod,rc,svc,...").
