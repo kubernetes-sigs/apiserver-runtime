@@ -24,6 +24,7 @@ import (
 	genericregistry "k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/rest"
 	pkgserver "k8s.io/apiserver/pkg/server"
+	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/resourcestrategy"
 )
 
 type StorageProvider func(s *runtime.Scheme, g genericregistry.RESTOptionsGetter) (rest.Storage, error)
@@ -46,15 +47,23 @@ func BuildAPIGroupInfos(s *runtime.Scheme, g genericregistry.RESTOptionsGetter) 
 	apiGroups := []*pkgserver.APIGroupInfo{}
 	for _, group := range groups.List() {
 		apis := map[string]map[string]rest.Storage{}
-		var err error
 		for gvr, storageProviderFunc := range APIs {
 			if gvr.Group == group {
 				if _, found := apis[gvr.Version]; !found {
 					apis[gvr.Version] = map[string]rest.Storage{}
 				}
-				apis[gvr.Version][gvr.Resource], err = storageProviderFunc(s, g)
+				storage, err := storageProviderFunc(s, g)
 				if err != nil {
 					return nil, err
+				}
+				apis[gvr.Version][gvr.Resource] = storage
+				// add the defaulting function for this version to the scheme
+				if _, ok := storage.(resourcestrategy.Defaulter); ok {
+					if obj, ok := storage.(runtime.Object); ok {
+						Scheme.AddTypeDefaultingFunc(obj, func(obj interface{}) {
+							obj.(resourcestrategy.Defaulter).Default()
+						})
+					}
 				}
 			}
 		}

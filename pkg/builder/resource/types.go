@@ -84,13 +84,14 @@ type MultiVersionObject interface {
 
 // StatusSubResource defines interface for registering status subresource to a parent resource.
 type StatusSubResource interface {
+	SubResource
 	// CopyTo copies the content of the status subresource to a parent resource.
 	CopyTo(parent ObjectWithStatusSubResource)
 }
 
-// ArbitrarySubResource defines interface for registering arbitrary subresource to the parent resource.
-type ArbitrarySubResource interface {
-	Name() string
+// SubResource defines interface for registering arbitrary subresource to the parent resource.
+type SubResource interface {
+	SubResourceName() string
 	// TODO: fill the details for this interface.
 }
 
@@ -105,12 +106,6 @@ type ObjectWithScaleSubResource interface {
 	Object
 	SetScale(scaleSubResource *autoscalingv1.Scale)
 	GetScale() (scaleSubResource *autoscalingv1.Scale)
-}
-
-// ObjectWithArbitrarySubResource adds arbitrary subresources to the resource.
-type ObjectWithArbitrarySubResource interface {
-	Object
-	ArbitrarySubResources() []ArbitrarySubResource
 }
 
 // AddToScheme returns a function to add the Objects to the scheme.
