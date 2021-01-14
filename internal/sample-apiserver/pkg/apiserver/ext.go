@@ -17,13 +17,18 @@ limitations under the License.
 package apiserver
 
 import (
+	"net/url"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/rest"
 	pkgserver "k8s.io/apiserver/pkg/server"
+
+	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/resourcestrategy"
 )
 
@@ -33,6 +38,15 @@ var (
 	APIs                = map[schema.GroupVersionResource]StorageProvider{}
 	GenericAPIServerFns []func(*pkgserver.GenericAPIServer) *pkgserver.GenericAPIServer
 )
+
+var (
+	ParameterScheme = runtime.NewScheme()
+	ParameterCodec  = runtime.NewParameterCodec(ParameterScheme)
+)
+
+func init() {
+	metav1.AddMetaToScheme(ParameterScheme)
+}
 
 func BuildAPIGroupInfos(s *runtime.Scheme, g genericregistry.RESTOptionsGetter) ([]*pkgserver.APIGroupInfo, error) {
 	resourcesByGroupVersion := make(map[schema.GroupVersion]sets.String)
@@ -60,14 +74,28 @@ func BuildAPIGroupInfos(s *runtime.Scheme, g genericregistry.RESTOptionsGetter) 
 				// add the defaulting function for this version to the scheme
 				if _, ok := storage.(resourcestrategy.Defaulter); ok {
 					if obj, ok := storage.(runtime.Object); ok {
-						Scheme.AddTypeDefaultingFunc(obj, func(obj interface{}) {
+						s.AddTypeDefaultingFunc(obj, func(obj interface{}) {
 							obj.(resourcestrategy.Defaulter).Default()
 						})
 					}
 				}
+				if c, ok := storage.(rest.Connecter); ok {
+					optionsObj, _, _ := c.NewConnectOptions()
+					if optionsObj != nil {
+						ParameterScheme.AddKnownTypes(gvr.GroupVersion(), optionsObj)
+						Scheme.AddKnownTypes(gvr.GroupVersion(), optionsObj)
+						if _, ok := optionsObj.(resource.QueryParameterObject); ok {
+							if err := ParameterScheme.AddConversionFunc(&url.Values{}, optionsObj, func(src interface{}, dest interface{}, s conversion.Scope) error {
+								return dest.(resource.QueryParameterObject).ConvertFromUrlValues(src.(*url.Values))
+							}); err != nil {
+								return nil, err
+							}
+						}
+					}
+				}
 			}
 		}
-		apiGroupInfo := pkgserver.NewDefaultAPIGroupInfo(group, Scheme, metav1.ParameterCodec, Codecs)
+		apiGroupInfo := pkgserver.NewDefaultAPIGroupInfo(group, Scheme, ParameterCodec, Codecs)
 		apiGroupInfo.VersionedResourcesStorageMap = apis
 		apiGroups = append(apiGroups, &apiGroupInfo)
 	}
