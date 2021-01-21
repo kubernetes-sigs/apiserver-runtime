@@ -82,19 +82,6 @@ type MultiVersionObject interface {
 	ConvertFromStorageVersion(storageObj runtime.Object) error
 }
 
-// StatusSubResource defines interface for registering status subresource to a parent resource.
-type StatusSubResource interface {
-	SubResource
-	// CopyTo copies the content of the status subresource to a parent resource.
-	CopyTo(parent ObjectWithStatusSubResource)
-}
-
-// SubResource defines interface for registering arbitrary subresource to the parent resource.
-type SubResource interface {
-	SubResourceName() string
-	// TODO: fill the details for this interface.
-}
-
 // ObjectWithStatusSubResource defines an interface for getting and setting the status sub-resource for a resource.
 type ObjectWithStatusSubResource interface {
 	Object
@@ -121,8 +108,9 @@ func AddToScheme(objs ...Object) func(s *runtime.Scheme) error {
 			s.AddKnownTypes(obj.GetGroupVersionResource().GroupVersion(), obj.New(), obj.NewList())
 			if obj.IsStorageVersion() {
 				s.AddKnownTypes(schema.GroupVersion{
-					Group:   runtime.APIVersionInternal,
-					Version: obj.GetGroupVersionResource().Version}, obj.New(), obj.NewList())
+					Group:   obj.GetGroupVersionResource().Group,
+					Version: runtime.APIVersionInternal,
+				}, obj.New(), obj.NewList())
 			} else {
 				multiVersionObj, ok := obj.(MultiVersionObject)
 				if !ok {

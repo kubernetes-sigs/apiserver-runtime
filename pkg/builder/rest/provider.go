@@ -27,7 +27,7 @@ import (
 type ResourceHandlerProvider = apiserver.StorageProvider
 
 // StaticHandlerProvider returns itself as the request handler.
-type StaticHandlerProvider struct {
+type StaticHandlerProvider struct { // TODO: privatize
 	rest.Storage
 }
 
