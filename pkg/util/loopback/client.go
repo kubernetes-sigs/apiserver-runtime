@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package loopback is a set of utilities for apiserver loopback connections.
 package loopback
 
 import (
