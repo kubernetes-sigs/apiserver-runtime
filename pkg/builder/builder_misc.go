@@ -40,10 +40,18 @@ func (a *Server) WithAdditionalSchemesToBuild(s ...*runtime.Scheme) *Server {
 	return a
 }
 
-// ExposeLoopbackClientConfig exposes loopback client config as an external variable.
+// ExposeLoopbackClientConfig exposes loopback client config as an external singleton.
 func (a *Server) ExposeLoopbackClientConfig() *Server {
 	return a.WithServerFns(func(c *GenericAPIServer) *GenericAPIServer {
 		loopback.SetLoopbackClientConfig(c.LoopbackClientConfig)
 		return c
+	})
+}
+
+// ExposeLoopbackAuthorizer exposes loopback authorizer as an external singleton.
+func (a *Server) ExposeLoopbackAuthorizer() *Server {
+	return a.WithServerFns(func(s *GenericAPIServer) *GenericAPIServer {
+		loopback.SetAuthorizer(s.Authorizer)
+		return s
 	})
 }
