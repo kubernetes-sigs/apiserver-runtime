@@ -17,12 +17,7 @@ limitations under the License.
 package resource
 
 import (
-	"fmt"
-
-	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/resourcestrategy"
-
 	"k8s.io/apiserver/pkg/registry/rest"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -93,48 +88,4 @@ type ObjectWithScaleSubResource interface {
 	Object
 	SetScale(scaleSubResource *autoscalingv1.Scale)
 	GetScale() (scaleSubResource *autoscalingv1.Scale)
-}
-
-// AddToScheme returns a function to add the Objects to the scheme.
-//
-// AddToScheme will register the objects returned by New and NewList under the GroupVersion for each object.
-// AddToScheme will also register the objects under the "__internal" group version for each object that
-// returns true for IsInternalVersion.
-// AddToScheme will register the defaulting function if it implements the Defaulter inteface.
-func AddToScheme(objs ...Object) func(s *runtime.Scheme) error {
-	return func(s *runtime.Scheme) error {
-		for i := range objs {
-			obj := objs[i]
-			s.AddKnownTypes(obj.GetGroupVersionResource().GroupVersion(), obj.New(), obj.NewList())
-			if obj.IsStorageVersion() {
-				s.AddKnownTypes(schema.GroupVersion{
-					Group:   obj.GetGroupVersionResource().Group,
-					Version: runtime.APIVersionInternal,
-				}, obj.New(), obj.NewList())
-			} else {
-				multiVersionObj, ok := obj.(MultiVersionObject)
-				if !ok {
-					return fmt.Errorf("resource should implement MultiVersionObject if it's not storage-version")
-				}
-				// registering conversion functions to scheme instance
-				storageVersionObj := multiVersionObj.NewStorageVersionObject()
-				if err := s.AddConversionFunc(obj, storageVersionObj, func(from, to interface{}, _ conversion.Scope) error {
-					return from.(MultiVersionObject).ConvertToStorageVersion(to.(runtime.Object))
-				}); err != nil {
-					return err
-				}
-				if err := s.AddConversionFunc(storageVersionObj, obj, func(from, to interface{}, _ conversion.Scope) error {
-					return from.(MultiVersionObject).ConvertFromStorageVersion(to.(runtime.Object))
-				}); err != nil {
-					return err
-				}
-			}
-			if _, ok := obj.(resourcestrategy.Defaulter); ok {
-				s.AddTypeDefaultingFunc(obj, func(o interface{}) {
-					o.(resourcestrategy.Defaulter).Default()
-				})
-			}
-		}
-		return nil
-	}
 }

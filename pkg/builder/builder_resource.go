@@ -18,6 +18,9 @@ package builder
 
 import (
 	"fmt"
+	"strings"
+
+	"k8s.io/klog"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	regsitryrest "k8s.io/apiserver/pkg/registry/rest"
@@ -57,7 +60,7 @@ func (a *Server) WithResource(obj resource.Object) *Server {
 	a.schemeBuilder.Register(resource.AddToScheme(obj))
 
 	// reuse the storage if this resource has already been registered
-	if s, found := a.storage[gvr.GroupResource()]; found {
+	if s, found := a.storageProvider[gvr.GroupResource()]; found {
 		_ = a.forGroupVersionResource(gvr, s.Get)
 		return a
 	}
@@ -74,17 +77,14 @@ func (a *Server) WithResource(obj resource.Object) *Server {
 		return a.forGroupVersionResource(gvr, rest.StaticHandlerProvider{Storage: s.(regsitryrest.Storage)}.Get)
 	}
 
-	_ = a.forGroupVersionResource(gvr, rest.New(obj))
+	parentStorageProvider := rest.New(obj)
+	_ = a.forGroupVersionResource(gvr, parentStorageProvider)
 
 	// automatically create status subresource if the object implements the status interface
 	if sgs, ok := obj.(resource.ObjectWithStatusSubResource); ok {
-		st := gvr.GroupVersion().WithResource(gvr.Resource + "/status")
-		if s, found := a.storage[st.GroupResource()]; found {
-			_ = a.forGroupVersionResource(st, s.Get)
-		} else {
-			_, _, _, sp := rest.NewStatus(sgs)
-			_ = a.forGroupVersionResource(st, sp)
-		}
+		statusGVR := gvr.GroupVersion().WithResource(gvr.Resource + "/status")
+		_, _, _, sp := rest.NewStatus(sgs)
+		_ = a.forGroupVersionSubResource(statusGVR, parentStorageProvider, sp)
 	}
 	return a
 }
@@ -99,12 +99,13 @@ func (a *Server) WithResourceAndStrategy(obj resource.Object, strategy rest.Stra
 	gvr := obj.GetGroupVersionResource()
 	a.schemeBuilder.Register(resource.AddToScheme(obj))
 
-	_ = a.forGroupVersionResource(gvr, rest.NewWithStrategy(obj, strategy))
+	parentStorageProvider := rest.NewWithStrategy(obj, strategy)
+	_ = a.forGroupVersionResource(gvr, parentStorageProvider)
 
 	// automatically create status subresource if the object implements the status interface
 	if _, ok := obj.(resource.ObjectWithStatusSubResource); ok {
-		st := gvr.GroupVersion().WithResource(gvr.Resource + "/status")
-		_ = a.forGroupVersionResource(st, rest.NewStatusWithStrategy(obj, strategy))
+		statusGVR := gvr.GroupVersion().WithResource(gvr.Resource + "/status")
+		_ = a.forGroupVersionSubResource(statusGVR, parentStorageProvider, rest.NewStatusWithStrategy(obj, strategy))
 	}
 	return a
 }
@@ -144,20 +145,38 @@ func (a *Server) WithResourceAndStorage(obj resource.Object, fn rest.StoreFn) *S
 	return a
 }
 
-// forGroupVersionResource manually registers storage for a specific resource or subresource version.
+// forGroupVersionResource manually registers storage for a specific resource.
 func (a *Server) forGroupVersionResource(
 	gvr schema.GroupVersionResource, sp rest.ResourceHandlerProvider) *Server {
 	// register the group version
 	a.withGroupVersions(gvr.GroupVersion())
 
-	// TODO: make sure folks don't register multiple storage instance for the same group-resource
+	// TODO: make sure folks don't register multiple storageProvider instance for the same group-resource
 	// don't replace the existing instance otherwise it will chain wrapped singletonProviders when
 	// fetching from the map before calling this function
-	if _, found := a.storage[gvr.GroupResource()]; !found {
-		a.storage[gvr.GroupResource()] = &singletonProvider{Provider: sp}
+	if _, found := a.storageProvider[gvr.GroupResource()]; !found {
+		a.storageProvider[gvr.GroupResource()] = &singletonProvider{Provider: sp}
 	}
-	// add the API with its storage
+	// add the API with its storageProvider
 	apiserver.APIs[gvr] = sp
+	return a
+}
+
+// forGroupVersionSubResource manually registers storageProvider for a specific subresource.
+func (a *Server) forGroupVersionSubResource(
+	gvr schema.GroupVersionResource, parentProvider rest.ResourceHandlerProvider, subResourceProvider rest.ResourceHandlerProvider) *Server {
+	isSubResource := strings.Contains(gvr.Resource, "/")
+	if !isSubResource {
+		klog.Fatalf("Expected status subresource but received %v/%v/%v", gvr.Group, gvr.Version, gvr.Resource)
+		return a
+	}
+
+	// add the API with its storageProvider for subresource
+	apiserver.APIs[gvr] = (&subResourceStorageProvider{
+		subResourceGVR:             gvr,
+		parentStorageProvider:      parentProvider,
+		subResourceStorageProvider: subResourceProvider,
+	}).Get
 	return a
 }
 
@@ -171,14 +190,15 @@ func (a *Server) WithSubResource(
 	gvr := parent.GetGroupVersionResource()
 
 	// reuse the storage if this resource has already been registered
-	if s, found := a.storage[gvr.GroupResource()]; found {
-		subResourceGVR := gvr.GroupVersion().WithResource(gvr.Resource + "/" + subResource.SubResourceName())
-		_ = a.forGroupVersionResource(subResourceGVR, s.Get)
-	} else {
-		a.errs = append(a.errs, fmt.Errorf(
-			"subresources must be registered with a strategy or handler the first time they are registered"))
+	parentStorageProvider, found := a.storageProvider[gvr.GroupResource()]
+	if !found {
+		a.errs = append(a.errs, fmt.Errorf("parent resource %v must be registered before subresource %v",
+			gvr, subResource.SubResourceName()))
+		return a
 	}
-	return a
+
+	subResourceGVR := gvr.GroupVersion().WithResource(gvr.Resource + "/" + subResource.SubResourceName())
+	return a.forGroupVersionSubResource(subResourceGVR, parentStorageProvider.Get, nil)
 }
 
 // WithSubResourceAndStrategy registers a subresource with the apiserver under an existing resource.
@@ -189,8 +209,8 @@ func (a *Server) WithSubResource(
 func (a *Server) WithSubResourceAndStrategy(
 	parent resource.Object, subResource resource.SubResource, strategy rest.Strategy) *Server {
 	gvr := parent.GetGroupVersionResource()
-	gvr.Resource = gvr.Resource + "/" + subResource.SubResourceName()
-	return a.forGroupVersionResource(gvr, rest.NewSubResourceWithStrategy(parent, subResource, strategy))
+	subResourceGVR := gvr.GroupVersion().WithResource(gvr.Resource + "/" + subResource.SubResourceName())
+	return a.forGroupVersionSubResource(subResourceGVR, rest.NewSubResourceWithStrategy(parent, subResource, strategy), nil)
 }
 
 // WithSubResourceAndHandler registers a request handler for the subresource rather than the default
@@ -199,11 +219,20 @@ func (a *Server) WithSubResourceAndStrategy(
 // Note: WithSubResource does NOT register the request or parent with the SchemeBuilder.  If they were not registered
 // through a WithResource call, then this must be done manually with WithAdditionalSchemeInstallers.
 func (a *Server) WithSubResourceAndHandler(
-	parent resource.Object, subResource resource.SubResource, sp rest.ResourceHandlerProvider) *Server {
+	parent resource.Object, subResource resource.SubResource, subResourceStorageProvider rest.ResourceHandlerProvider) *Server {
 	gvr := parent.GetGroupVersionResource()
+
+	// reuse the storageProvider if this resource has already been registered
+	parentStorageProvider, found := a.storageProvider[gvr.GroupResource()]
+	if !found {
+		a.errs = append(a.errs, fmt.Errorf("parent resource %v must be registered before subresource %v",
+			gvr, subResource.SubResourceName()))
+		return a
+	}
+
 	// add the subresource path
-	gvr.Resource = gvr.Resource + "/" + subResource.SubResourceName()
-	return a.forGroupVersionResource(gvr, sp)
+	subResourceGVR := gvr.GroupVersion().WithResource(gvr.Resource + "/" + subResource.SubResourceName())
+	return a.forGroupVersionSubResource(subResourceGVR, parentStorageProvider.Get, subResourceStorageProvider)
 }
 
 // WithSchemeInstallers registers functions to install resource types into the Scheme.
