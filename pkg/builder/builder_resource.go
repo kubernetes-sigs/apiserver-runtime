@@ -17,7 +17,6 @@ limitations under the License.
 package builder
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -159,11 +158,10 @@ func (a *Server) forGroupVersionResource(
 
 // forGroupVersionSubResource manually registers storageProvider for a specific subresource.
 func (a *Server) forGroupVersionSubResource(
-	gvr schema.GroupVersionResource, parentProvider rest.ResourceHandlerProvider, subResourceProvider rest.ResourceHandlerProvider) *Server {
+	gvr schema.GroupVersionResource, parentProvider rest.ResourceHandlerProvider, subResourceProvider rest.ResourceHandlerProvider) {
 	isSubResource := strings.Contains(gvr.Resource, "/")
 	if !isSubResource {
 		klog.Fatalf("Expected status subresource but received %v/%v/%v", gvr.Group, gvr.Version, gvr.Resource)
-		return a
 	}
 
 	// add the API with its storageProvider for subresource
@@ -172,62 +170,6 @@ func (a *Server) forGroupVersionSubResource(
 		parentStorageProvider:      parentProvider,
 		subResourceStorageProvider: subResourceProvider,
 	}).Get
-	return a
-}
-
-// WithSubResource registers a subresource with the apiserver under an existing resource.
-// Subresource can be used to  implement interfaces which may be implemented by multiple resources -- e.g. "scale".
-//
-// Note: WithSubResource does NOT register the request or parent with the SchemeBuilder.  If they were not registered
-// through a WithResource call, then this must be done manually with WithAdditionalSchemeInstallers.
-func (a *Server) WithSubResource(
-	parent resource.Object, subResource resource.SubResource) *Server {
-	gvr := parent.GetGroupVersionResource()
-
-	// reuse the storage if this resource has already been registered
-	parentStorageProvider, found := a.storageProvider[gvr.GroupResource()]
-	if !found {
-		a.errs = append(a.errs, fmt.Errorf("parent resource %v must be registered before subresource %v",
-			gvr, subResource.SubResourceName()))
-		return a
-	}
-
-	subResourceGVR := gvr.GroupVersion().WithResource(gvr.Resource + "/" + subResource.SubResourceName())
-	return a.forGroupVersionSubResource(subResourceGVR, parentStorageProvider.Get, nil)
-}
-
-// WithSubResourceAndStrategy registers a subresource with the apiserver under an existing resource.
-// Subresource can be used to  implement interfaces which may be implemented by multiple resources -- e.g. "scale".
-//
-// Note: WithSubResource does NOT register the request or parent with the SchemeBuilder.  If they were not registered
-// through a WithResource call, then this must be done manually with WithAdditionalSchemeInstallers.
-func (a *Server) WithSubResourceAndStrategy(
-	parent resource.Object, subResource resource.SubResource, strategy rest.Strategy) *Server {
-	gvr := parent.GetGroupVersionResource()
-	subResourceGVR := gvr.GroupVersion().WithResource(gvr.Resource + "/" + subResource.SubResourceName())
-	return a.forGroupVersionSubResource(subResourceGVR, rest.NewSubResourceWithStrategy(parent, subResource, strategy), nil)
-}
-
-// WithSubResourceAndHandler registers a request handler for the subresource rather than the default
-// etcd backed storage.
-//
-// Note: WithSubResource does NOT register the request or parent with the SchemeBuilder.  If they were not registered
-// through a WithResource call, then this must be done manually with WithAdditionalSchemeInstallers.
-func (a *Server) WithSubResourceAndHandler(
-	parent resource.Object, subResource resource.SubResource, subResourceStorageProvider rest.ResourceHandlerProvider) *Server {
-	gvr := parent.GetGroupVersionResource()
-
-	// reuse the storageProvider if this resource has already been registered
-	parentStorageProvider, found := a.storageProvider[gvr.GroupResource()]
-	if !found {
-		a.errs = append(a.errs, fmt.Errorf("parent resource %v must be registered before subresource %v",
-			gvr, subResource.SubResourceName()))
-		return a
-	}
-
-	// add the subresource path
-	subResourceGVR := gvr.GroupVersion().WithResource(gvr.Resource + "/" + subResource.SubResourceName())
-	return a.forGroupVersionSubResource(subResourceGVR, parentStorageProvider.Get, subResourceStorageProvider)
 }
 
 // WithSchemeInstallers registers functions to install resource types into the Scheme.
@@ -251,7 +193,7 @@ func (a *Server) withSubResourceIfExists(obj resource.Object, parentStorageProvi
 	if sgs, ok := obj.(resource.ObjectWithStatusSubResource); ok {
 		statusGVR := parentGVR.GroupVersion().WithResource(parentGVR.Resource + "/" + sgs.GetStatus().SubResourceName())
 		_, _, _, sp := rest.NewStatus(sgs)
-		_ = a.forGroupVersionSubResource(statusGVR, parentStorageProvider, sp)
+		a.forGroupVersionSubResource(statusGVR, parentStorageProvider, sp)
 	}
 	if sgs, ok := obj.(resource.ObjectWithArbitrarySubResource); ok {
 		for _, sub := range sgs.GetArbitrarySubResources() {
@@ -263,7 +205,7 @@ func (a *Server) withSubResourceIfExists(obj resource.Object, parentStorageProvi
 				}
 				return nil
 			})
-			_ = a.forGroupVersionSubResource(subResourceGVR, parentStorageProvider, rest.StaticHandlerProvider{Storage: sub}.Get)
+			a.forGroupVersionSubResource(subResourceGVR, parentStorageProvider, rest.StaticHandlerProvider{Storage: sub}.Get)
 		}
 	}
 }
