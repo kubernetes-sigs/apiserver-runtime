@@ -31,13 +31,13 @@ import (
 
 // APIServer builds an apiserver to server Kubernetes resources and sub resources.
 var APIServer = &Server{
-	storage: map[schema.GroupResource]*singletonProvider{},
+	storageProvider: map[schema.GroupResource]*singletonProvider{},
 }
 
 // Server builds a new apiserver for a single API group
 type Server struct {
 	errs                 []error
-	storage              map[schema.GroupResource]*singletonProvider
+	storageProvider      map[schema.GroupResource]*singletonProvider
 	groupVersions        map[schema.GroupVersion]bool
 	orderedGroupVersions []schema.GroupVersion
 	schemes              []*runtime.Scheme
