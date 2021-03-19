@@ -18,10 +18,12 @@ package builder
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"k8s.io/klog"
 
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	regsitryrest "k8s.io/apiserver/pkg/registry/rest"
 	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apiserver"
@@ -81,11 +83,7 @@ func (a *Server) WithResource(obj resource.Object) *Server {
 	_ = a.forGroupVersionResource(gvr, parentStorageProvider)
 
 	// automatically create status subresource if the object implements the status interface
-	if sgs, ok := obj.(resource.ObjectWithStatusSubResource); ok {
-		statusGVR := gvr.GroupVersion().WithResource(gvr.Resource + "/status")
-		_, _, _, sp := rest.NewStatus(sgs)
-		_ = a.forGroupVersionSubResource(statusGVR, parentStorageProvider, sp)
-	}
+	a.withSubResourceIfExists(obj, parentStorageProvider)
 	return a
 }
 
@@ -103,10 +101,7 @@ func (a *Server) WithResourceAndStrategy(obj resource.Object, strategy rest.Stra
 	_ = a.forGroupVersionResource(gvr, parentStorageProvider)
 
 	// automatically create status subresource if the object implements the status interface
-	if _, ok := obj.(resource.ObjectWithStatusSubResource); ok {
-		statusGVR := gvr.GroupVersion().WithResource(gvr.Resource + "/status")
-		_ = a.forGroupVersionSubResource(statusGVR, parentStorageProvider, rest.NewStatusWithStrategy(obj, strategy))
-	}
+	a.withSubResourceIfExists(obj, parentStorageProvider)
 	return a
 }
 
@@ -248,4 +243,27 @@ func (a *Server) withGroupVersions(versions ...schema.GroupVersion) *Server {
 		a.orderedGroupVersions = append(a.orderedGroupVersions, gv)
 	}
 	return a
+}
+
+func (a *Server) withSubResourceIfExists(obj resource.Object, parentStorageProvider rest.ResourceHandlerProvider) {
+	parentGVR := obj.GetGroupVersionResource()
+	// automatically create status subresource if the object implements the status interface
+	if sgs, ok := obj.(resource.ObjectWithStatusSubResource); ok {
+		statusGVR := parentGVR.GroupVersion().WithResource(parentGVR.Resource + "/" + sgs.GetStatus().SubResourceName())
+		_, _, _, sp := rest.NewStatus(sgs)
+		_ = a.forGroupVersionSubResource(statusGVR, parentStorageProvider, sp)
+	}
+	if sgs, ok := obj.(resource.ObjectWithArbitrarySubResource); ok {
+		for _, sub := range sgs.GetArbitrarySubResources() {
+			sub := sub
+			subResourceGVR := parentGVR.GroupVersion().WithResource(parentGVR.Resource + "/" + sub.SubResourceName())
+			a.schemeBuilder.Register(func(scheme *runtime.Scheme) error {
+				if reflect.TypeOf(sub.New()) != reflect.TypeOf(obj) { // subResource.New() may return the parent resource at some time
+					scheme.AddKnownTypes(subResourceGVR.GroupVersion(), sub.New())
+				}
+				return nil
+			})
+			_ = a.forGroupVersionSubResource(subResourceGVR, parentStorageProvider, rest.StaticHandlerProvider{Storage: sub}.Get)
+		}
+	}
 }

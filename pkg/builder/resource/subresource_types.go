@@ -16,19 +16,43 @@ limitations under the License.
 
 package resource
 
-import "net/url"
+import (
+	"net/url"
 
-// StatusSubResource defines interface for registering status subresource to a parent resource.
+	"k8s.io/apiserver/pkg/registry/rest"
+	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/resourcerest"
+)
+
+// SubResource defines interface for registering arbitrary subresource to the parent resource.
+type SubResource interface {
+	SubResourceName() string
+	// TODO: fill the details for this interface.
+}
+
+// StatusSubResource defines required methods for implementing a status subresource.
 type StatusSubResource interface {
 	SubResource
 	// CopyTo copies the content of the status subresource to a parent resource.
 	CopyTo(parent ObjectWithStatusSubResource)
 }
 
-// SubResource defines interface for registering arbitrary subresource to the parent resource.
-type SubResource interface {
-	SubResourceName() string
-	// TODO: fill the details for this interface.
+// ArbitrarySubResource defines required methods for extending a new custom subresource.
+type ArbitrarySubResource interface {
+	SubResource
+	rest.Storage
+}
+
+// ConnectorSubResource defines required methods for implementing a connector subresource.
+type ConnectorSubResource interface {
+	ArbitrarySubResource
+	resourcerest.Connecter
+}
+
+// GetterUpdaterSubResource defines required methods for implementing a subresource that allows getting & updating.
+type GetterUpdaterSubResource interface {
+	ArbitrarySubResource
+	resourcerest.Getter
+	resourcerest.Updater
 }
 
 // QueryParameterObject allows the object to be casted to url.Values.

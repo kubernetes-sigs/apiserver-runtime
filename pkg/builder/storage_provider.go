@@ -12,6 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/registry/generic"
 	regsitryrest "k8s.io/apiserver/pkg/registry/rest"
+	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
+	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/resourcerest"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/rest"
 	contextutil "sigs.k8s.io/apiserver-runtime/pkg/util/context"
 )
@@ -54,33 +56,33 @@ func (s *subResourceStorageProvider) Get(scheme *runtime.Scheme, optsGetter gene
 		return nil, err
 	}
 
-	// standard
-	if stdSubresourceStorage, isStandardStorage := subResourceStorage.(regsitryrest.StandardStorage); isStandardStorage {
+	// status subresource
+	if strings.HasSuffix(s.subResourceGVR.Resource, "/status") {
 		return &commonSubResourceStorage{
 			parentStorage:          stdParentStorage,
 			subResourceConstructor: subResourceStorage,
-			subResourceGetter:      stdSubresourceStorage,
-			subResourceUpdater:     stdSubresourceStorage,
+			subResourceGetter:      subResourceStorage.(resourcerest.Getter),
+			subResourceUpdater:     subResourceStorage.(resourcerest.Updater),
 		}, nil
 	}
+
 	// getter & updater
-	getter, isGetter := subResourceStorage.(regsitryrest.Getter)
-	updater, isUpdater := subResourceStorage.(regsitryrest.Updater)
-	if isGetter && isUpdater {
+	getterUpdaterSubResource, isGetterUpdater := subResourceStorage.(resource.GetterUpdaterSubResource)
+	if isGetterUpdater {
 		return &commonSubResourceStorage{
 			parentStorage:          stdParentStorage,
 			subResourceConstructor: subResourceStorage,
-			subResourceGetter:      getter,
-			subResourceUpdater:     updater,
+			subResourceGetter:      getterUpdaterSubResource,
+			subResourceUpdater:     getterUpdaterSubResource,
 		}, nil
 	}
 	// connector
-	connector, isConnector := subResourceStorage.(regsitryrest.Connecter)
+	connectorSubResource, isConnector := subResourceStorage.(resource.ConnectorSubResource)
 	if isConnector {
 		return &connectorSubResourceStorage{
 			parentStorage:          stdParentStorage,
 			subResourceConstructor: subResourceStorage,
-			subResourceConnector:   connector,
+			subResourceConnector:   connectorSubResource,
 		}, nil
 	}
 

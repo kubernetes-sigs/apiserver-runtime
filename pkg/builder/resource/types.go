@@ -89,3 +89,9 @@ type ObjectWithScaleSubResource interface {
 	SetScale(scaleSubResource *autoscalingv1.Scale)
 	GetScale() (scaleSubResource *autoscalingv1.Scale)
 }
+
+// ObjectWithArbitrarySubResource defines an interface for plumbing arbitrary sub-resources for a resource.
+type ObjectWithArbitrarySubResource interface {
+	Object
+	GetArbitrarySubResources() []ArbitrarySubResource
+}
