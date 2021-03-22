@@ -17,12 +17,10 @@ limitations under the License.
 package builder
 
 import (
-	"reflect"
 	"strings"
 
 	"k8s.io/klog"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	regsitryrest "k8s.io/apiserver/pkg/registry/rest"
 	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apiserver"
@@ -199,12 +197,6 @@ func (a *Server) withSubResourceIfExists(obj resource.Object, parentStorageProvi
 		for _, sub := range sgs.GetArbitrarySubResources() {
 			sub := sub
 			subResourceGVR := parentGVR.GroupVersion().WithResource(parentGVR.Resource + "/" + sub.SubResourceName())
-			a.schemeBuilder.Register(func(scheme *runtime.Scheme) error {
-				if reflect.TypeOf(sub.New()) != reflect.TypeOf(obj) { // subResource.New() may return the parent resource at some time
-					scheme.AddKnownTypes(subResourceGVR.GroupVersion(), sub.New())
-				}
-				return nil
-			})
 			a.forGroupVersionSubResource(subResourceGVR, parentStorageProvider, rest.StaticHandlerProvider{Storage: sub}.Get)
 		}
 	}
