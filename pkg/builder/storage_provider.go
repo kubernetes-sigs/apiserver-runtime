@@ -142,7 +142,11 @@ func (c *connectorSubResourceStorage) New() runtime.Object {
 }
 
 func (c *connectorSubResourceStorage) Connect(ctx context.Context, id string, options runtime.Object, r regsitryrest.Responder) (http.Handler, error) {
-	return c.subResourceConnector.Connect(ctx, id, options, r)
+	return c.subResourceConnector.Connect(
+		contextutil.WithParentStorage(ctx, c.parentStorage),
+		id,
+		options,
+		r)
 }
 
 func (c *connectorSubResourceStorage) NewConnectOptions() (runtime.Object, bool, string) {
