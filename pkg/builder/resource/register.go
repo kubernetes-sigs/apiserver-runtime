@@ -2,6 +2,7 @@ package resource
 
 import (
 	"fmt"
+	"reflect"
 
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -52,6 +53,16 @@ func AddToScheme(objs ...Object) func(s *runtime.Scheme) error {
 			if objWithStatus, ok := obj.(ObjectWithStatusSubResource); ok {
 				if statusObj, ok := objWithStatus.GetStatus().(runtime.Object); ok {
 					s.AddKnownTypes(obj.GetGroupVersionResource().GroupVersion(), statusObj)
+				}
+			}
+			if sgs, ok := obj.(ObjectWithArbitrarySubResource); ok {
+				for _, sub := range sgs.GetArbitrarySubResources() {
+					sub := sub
+					parentGVR := obj.GetGroupVersionResource()
+					subResourceGVR := parentGVR.GroupVersion().WithResource(parentGVR.Resource + "/" + sub.SubResourceName())
+					if reflect.TypeOf(sub.New()) != reflect.TypeOf(obj) { // subResource.New() may return the parent resource at some time
+						s.AddKnownTypes(subResourceGVR.GroupVersion(), sub.New())
+					}
 				}
 			}
 		}
