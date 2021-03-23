@@ -126,15 +126,7 @@ func (a *Server) WithResourceAndHandler(obj resource.Object, sp rest.ResourceHan
 func (a *Server) WithResourceAndStorage(obj resource.Object, fn rest.StoreFn) *Server {
 	gvr := obj.GetGroupVersionResource()
 	a.schemeBuilder.Register(resource.AddToScheme(obj))
-
-	_ = a.forGroupVersionResource(gvr, rest.NewWithFn(obj, fn))
-
-	// automatically create status subresource if the object implements the status interface
-	if _, ok := obj.(resource.ObjectWithStatusSubResource); ok {
-		st := gvr.GroupVersion().WithResource(gvr.Resource + "/status")
-		_ = a.forGroupVersionResource(st, rest.NewStatusWithFn(obj, fn))
-	}
-	return a
+	return a.forGroupVersionResource(gvr, rest.NewWithFn(obj, fn))
 }
 
 // forGroupVersionResource manually registers storage for a specific resource.
@@ -188,10 +180,9 @@ func (a *Server) withGroupVersions(versions ...schema.GroupVersion) *Server {
 func (a *Server) withSubResourceIfExists(obj resource.Object, parentStorageProvider rest.ResourceHandlerProvider) {
 	parentGVR := obj.GetGroupVersionResource()
 	// automatically create status subresource if the object implements the status interface
-	if sgs, ok := obj.(resource.ObjectWithStatusSubResource); ok {
+	if _, ok := obj.(resource.ObjectWithStatusSubResource); ok {
 		statusGVR := parentGVR.GroupVersion().WithResource(parentGVR.Resource + "/status")
-		_, _, _, sp := rest.NewStatus(sgs)
-		a.forGroupVersionSubResource(statusGVR, parentStorageProvider, sp)
+		a.forGroupVersionSubResource(statusGVR, parentStorageProvider, nil)
 	}
 	if _, ok := obj.(resource.ObjectWithScaleSubResource); ok {
 		subResourceGVR := parentGVR.GroupVersion().WithResource(parentGVR.Resource + "/scale")
