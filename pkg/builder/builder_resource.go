@@ -189,9 +189,13 @@ func (a *Server) withSubResourceIfExists(obj resource.Object, parentStorageProvi
 	parentGVR := obj.GetGroupVersionResource()
 	// automatically create status subresource if the object implements the status interface
 	if sgs, ok := obj.(resource.ObjectWithStatusSubResource); ok {
-		statusGVR := parentGVR.GroupVersion().WithResource(parentGVR.Resource + "/" + sgs.GetStatus().SubResourceName())
+		statusGVR := parentGVR.GroupVersion().WithResource(parentGVR.Resource + "/status")
 		_, _, _, sp := rest.NewStatus(sgs)
 		a.forGroupVersionSubResource(statusGVR, parentStorageProvider, sp)
+	}
+	if _, ok := obj.(resource.ObjectWithScaleSubResource); ok {
+		subResourceGVR := parentGVR.GroupVersion().WithResource(parentGVR.Resource + "/scale")
+		a.forGroupVersionSubResource(subResourceGVR, parentStorageProvider, nil)
 	}
 	if sgs, ok := obj.(resource.ObjectWithArbitrarySubResource); ok {
 		for _, sub := range sgs.GetArbitrarySubResources() {

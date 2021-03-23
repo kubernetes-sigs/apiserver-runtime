@@ -7,11 +7,13 @@ import (
 	"strings"
 	"sync"
 
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/registry/generic"
-	regsitryrest "k8s.io/apiserver/pkg/registry/rest"
+	registryrest "k8s.io/apiserver/pkg/registry/rest"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/resourcerest"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/rest"
@@ -22,12 +24,12 @@ import (
 type singletonProvider struct {
 	sync.Once
 	Provider rest.ResourceHandlerProvider
-	storage  regsitryrest.Storage
+	storage  registryrest.Storage
 	err      error
 }
 
 func (s *singletonProvider) Get(
-	scheme *runtime.Scheme, optsGetter generic.RESTOptionsGetter) (regsitryrest.Storage, error) {
+	scheme *runtime.Scheme, optsGetter generic.RESTOptionsGetter) (registryrest.Storage, error) {
 	s.Once.Do(func() {
 		s.storage, s.err = s.Provider(scheme, optsGetter)
 	})
@@ -40,20 +42,23 @@ type subResourceStorageProvider struct {
 	subResourceStorageProvider rest.ResourceHandlerProvider
 }
 
-func (s *subResourceStorageProvider) Get(scheme *runtime.Scheme, optsGetter generic.RESTOptionsGetter) (regsitryrest.Storage, error) {
+func (s *subResourceStorageProvider) Get(scheme *runtime.Scheme, optsGetter generic.RESTOptionsGetter) (registryrest.Storage, error) {
 	parentStorage, err := s.parentStorageProvider(scheme, optsGetter)
 	if err != nil {
 		return nil, err
 	}
-	stdParentStorage, ok := parentStorage.(regsitryrest.StandardStorage)
+	stdParentStorage, ok := parentStorage.(registryrest.StandardStorage)
 	if !ok {
 		return nil, fmt.Errorf("parent storageProvider for %v/%v/%v must implement rest.StandardStorage",
 			s.subResourceGVR.Group, s.subResourceGVR.Version, s.subResourceGVR.Resource)
 	}
 
-	subResourceStorage, err := s.subResourceStorageProvider(scheme, optsGetter)
-	if err != nil {
-		return nil, err
+	var subResourceStorage registryrest.Storage
+	if s.subResourceStorageProvider != nil {
+		subResourceStorage, err = s.subResourceStorageProvider(scheme, optsGetter)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// status subresource
@@ -65,7 +70,12 @@ func (s *subResourceStorageProvider) Get(scheme *runtime.Scheme, optsGetter gene
 			subResourceUpdater:     subResourceStorage.(resourcerest.Updater),
 		}, nil
 	}
-
+	// scale subresource
+	if strings.HasSuffix(s.subResourceGVR.Resource, "/scale") {
+		return &scaleSubResourceStorage{
+			parentStorage: stdParentStorage,
+		}, nil
+	}
 	// getter & updater
 	getterUpdaterSubResource, isGetterUpdater := subResourceStorage.(resource.GetterUpdaterSubResource)
 	if isGetterUpdater {
@@ -90,15 +100,16 @@ func (s *subResourceStorageProvider) Get(scheme *runtime.Scheme, optsGetter gene
 	return s.subResourceStorageProvider(scheme, optsGetter)
 }
 
-var _ regsitryrest.Getter = &commonSubResourceStorage{}
-var _ regsitryrest.Updater = &commonSubResourceStorage{}
-
+// common subresource storage
 type commonSubResourceStorage struct {
-	parentStorage          regsitryrest.StandardStorage
-	subResourceConstructor regsitryrest.Storage
-	subResourceGetter      regsitryrest.Getter
-	subResourceUpdater     regsitryrest.Updater
+	parentStorage          registryrest.StandardStorage
+	subResourceConstructor registryrest.Storage
+	subResourceGetter      registryrest.Getter
+	subResourceUpdater     registryrest.Updater
 }
+
+var _ registryrest.Getter = &commonSubResourceStorage{}
+var _ registryrest.Updater = &commonSubResourceStorage{}
 
 func (c *commonSubResourceStorage) New() runtime.Object {
 	return c.subResourceConstructor.New()
@@ -113,9 +124,9 @@ func (c *commonSubResourceStorage) Get(ctx context.Context, name string, options
 
 func (c *commonSubResourceStorage) Update(ctx context.Context,
 	name string,
-	objInfo regsitryrest.UpdatedObjectInfo,
-	createValidation regsitryrest.ValidateObjectFunc,
-	updateValidation regsitryrest.ValidateObjectUpdateFunc,
+	objInfo registryrest.UpdatedObjectInfo,
+	createValidation registryrest.ValidateObjectFunc,
+	updateValidation registryrest.ValidateObjectUpdateFunc,
 	forceAllowCreate bool,
 	options *v1.UpdateOptions) (runtime.Object, bool, error) {
 	return c.subResourceUpdater.Update(
@@ -128,20 +139,21 @@ func (c *commonSubResourceStorage) Update(ctx context.Context,
 		options)
 }
 
-var _ regsitryrest.Storage = &connectorSubResourceStorage{}
-var _ regsitryrest.Connecter = &connectorSubResourceStorage{}
-
+// connector subresource storage
 type connectorSubResourceStorage struct {
-	parentStorage          regsitryrest.StandardStorage
-	subResourceConstructor regsitryrest.Storage
-	subResourceConnector   regsitryrest.Connecter
+	parentStorage          registryrest.StandardStorage
+	subResourceConstructor registryrest.Storage
+	subResourceConnector   registryrest.Connecter
 }
+
+var _ registryrest.Storage = &connectorSubResourceStorage{}
+var _ registryrest.Connecter = &connectorSubResourceStorage{}
 
 func (c *connectorSubResourceStorage) New() runtime.Object {
 	return c.subResourceConstructor.New()
 }
 
-func (c *connectorSubResourceStorage) Connect(ctx context.Context, id string, options runtime.Object, r regsitryrest.Responder) (http.Handler, error) {
+func (c *connectorSubResourceStorage) Connect(ctx context.Context, id string, options runtime.Object, r registryrest.Responder) (http.Handler, error) {
 	return c.subResourceConnector.Connect(
 		contextutil.WithParentStorage(ctx, c.parentStorage),
 		id,
@@ -155,6 +167,103 @@ func (c *connectorSubResourceStorage) NewConnectOptions() (runtime.Object, bool,
 
 func (c *connectorSubResourceStorage) ConnectMethods() []string {
 	return c.subResourceConnector.ConnectMethods()
+}
+
+// scale subresource storage
+type scaleSubResourceStorage struct {
+	parentStorage registryrest.StandardStorage
+}
+
+func (s *scaleSubResourceStorage) GroupVersionKind(containingGV schema.GroupVersion) schema.GroupVersionKind {
+	return autoscalingv1.SchemeGroupVersion.WithKind("Scale")
+}
+
+var _ registryrest.GroupVersionKindProvider = &scaleSubResourceStorage{}
+var _ registryrest.Getter = &scaleSubResourceStorage{}
+var _ registryrest.Updater = &scaleSubResourceStorage{}
+
+func (s *scaleSubResourceStorage) New() runtime.Object {
+	return &autoscalingv1.Scale{}
+}
+
+func (s *scaleSubResourceStorage) Get(ctx context.Context, name string, options *v1.GetOptions) (runtime.Object, error) {
+	parentObj, err := s.parentStorage.Get(
+		contextutil.WithParentStorage(ctx, s.parentStorage),
+		name,
+		options)
+	if err != nil {
+		return nil, err
+	}
+	scaleParentObj, ok := parentObj.(resource.ObjectWithScaleSubResource)
+	if !ok {
+		return nil, fmt.Errorf("not a valid parent object, does it implement resource.ObjectWithScaleSubResource interface?")
+	}
+	return scaleParentObj.GetScale(), nil
+}
+
+func (s *scaleSubResourceStorage) Update(ctx context.Context,
+	name string,
+	objInfo registryrest.UpdatedObjectInfo,
+	createValidation registryrest.ValidateObjectFunc,
+	updateValidation registryrest.ValidateObjectUpdateFunc,
+	forceAllowCreate bool,
+	options *v1.UpdateOptions) (runtime.Object, bool, error) {
+	return s.parentStorage.Update(
+		contextutil.WithParentStorage(ctx, s.parentStorage),
+		name,
+		&scaleUpdatedObjectInfo{reqObjInfo: objInfo},
+		toScaleCreateValidation(createValidation),
+		toScaleUpdateValidation(updateValidation),
+		forceAllowCreate,
+		options)
+}
+
+var _ registryrest.UpdatedObjectInfo = &scaleUpdatedObjectInfo{}
+
+type scaleUpdatedObjectInfo struct {
+	reqObjInfo registryrest.UpdatedObjectInfo
+}
+
+func (s *scaleUpdatedObjectInfo) Preconditions() *v1.Preconditions {
+	return s.reqObjInfo.Preconditions()
+}
+
+func (s *scaleUpdatedObjectInfo) UpdatedObject(ctx context.Context, oldObj runtime.Object) (newObj runtime.Object, err error) {
+	oldObjWithScale := oldObj.(resource.ObjectWithScaleSubResource)
+	oldScale := oldObjWithScale.GetScale()
+	obj, err := s.reqObjInfo.UpdatedObject(ctx, oldScale)
+	if err != nil {
+		return nil, err
+	}
+	if obj == nil {
+		return nil, errors.NewBadRequest("nil update passed to Scale")
+	}
+	scale, ok := obj.(*autoscalingv1.Scale)
+	if !ok {
+		return nil, errors.NewBadRequest(fmt.Sprintf("wrong object passed to Scale update: %v", obj))
+	}
+	oldObjWithScale.SetScale(scale)
+	if len(scale.ResourceVersion) != 0 {
+		// The client provided a resourceVersion precondition.
+		// Set that precondition and return any conflict errors to the client.
+		oldObjWithScale.GetObjectMeta().ResourceVersion = scale.ResourceVersion
+	}
+	return oldObjWithScale, nil
+}
+
+func toScaleCreateValidation(f registryrest.ValidateObjectFunc) registryrest.ValidateObjectFunc {
+	return func(ctx context.Context, obj runtime.Object) error {
+		oldObjWithScale := obj.(resource.ObjectWithScaleSubResource)
+		return f(ctx, oldObjWithScale.GetScale())
+	}
+}
+
+func toScaleUpdateValidation(f registryrest.ValidateObjectUpdateFunc) registryrest.ValidateObjectUpdateFunc {
+	return func(ctx context.Context, obj, old runtime.Object) error {
+		oldObjWithScale := old.(resource.ObjectWithScaleSubResource)
+		objWithScale := obj.(resource.ObjectWithScaleSubResource)
+		return f(ctx, objWithScale, oldObjWithScale)
+	}
 }
 
 type errs struct {
