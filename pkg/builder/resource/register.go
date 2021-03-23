@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -53,6 +54,13 @@ func AddToScheme(objs ...Object) func(s *runtime.Scheme) error {
 			if objWithStatus, ok := obj.(ObjectWithStatusSubResource); ok {
 				if statusObj, ok := objWithStatus.GetStatus().(runtime.Object); ok {
 					s.AddKnownTypes(obj.GetGroupVersionResource().GroupVersion(), statusObj)
+				}
+			}
+			if _, ok := obj.(ObjectWithScaleSubResource); ok {
+				if !s.Recognizes(autoscalingv1.SchemeGroupVersion.WithKind("Scale")) {
+					if err := autoscalingv1.AddToScheme(s); err != nil {
+						return err
+					}
 				}
 			}
 			if sgs, ok := obj.(ObjectWithArbitrarySubResource); ok {
