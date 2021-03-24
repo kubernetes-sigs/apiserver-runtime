@@ -12,10 +12,12 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apiserver/pkg/registry/generic"
+	"k8s.io/apiserver/pkg/registry/generic/registry"
 	registryrest "k8s.io/apiserver/pkg/registry/rest"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
-	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/resourcerest"
+	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/util"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/rest"
 	contextutil "sigs.k8s.io/apiserver-runtime/pkg/util/context"
 )
@@ -63,12 +65,7 @@ func (s *subResourceStorageProvider) Get(scheme *runtime.Scheme, optsGetter gene
 
 	// status subresource
 	if strings.HasSuffix(s.subResourceGVR.Resource, "/status") {
-		return &commonSubResourceStorage{
-			parentStorage:          stdParentStorage,
-			subResourceConstructor: subResourceStorage,
-			subResourceGetter:      subResourceStorage.(resourcerest.Getter),
-			subResourceUpdater:     subResourceStorage.(resourcerest.Updater),
-		}, nil
+		return createStatusSubResourceStorage(stdParentStorage)
 	}
 	// scale subresource
 	if strings.HasSuffix(s.subResourceGVR.Resource, "/scale") {
@@ -98,6 +95,63 @@ func (s *subResourceStorageProvider) Get(scheme *runtime.Scheme, optsGetter gene
 
 	// use the subresource storage directly
 	return s.subResourceStorageProvider(scheme, optsGetter)
+}
+
+func createStatusSubResourceStorage(parentStorage registryrest.StandardStorage) (registryrest.Storage, error) {
+	parentStore, ok := parentStorage.(*registry.Store)
+	if !ok {
+		return nil, fmt.Errorf("parent type implementing ObjectWithStatusSubResource must be a cananical resource")
+	}
+	statusStore := *parentStore
+	statusStore.UpdateStrategy = &statusSubResourceStrategy{RESTUpdateStrategy: parentStore.UpdateStrategy}
+	return &statusSubResourceStorage{
+		store: &statusStore,
+	}, nil
+}
+
+// status subresource storage
+type statusSubResourceStorage struct {
+	store *registry.Store
+}
+
+var _ registryrest.Getter = &statusSubResourceStorage{}
+var _ registryrest.Updater = &statusSubResourceStorage{}
+
+func (s *statusSubResourceStorage) Get(ctx context.Context, name string, options *v1.GetOptions) (runtime.Object, error) {
+	return s.store.Get(ctx, name, options)
+}
+
+func (s *statusSubResourceStorage) New() runtime.Object {
+	return s.store.New()
+}
+
+func (s *statusSubResourceStorage) Update(ctx context.Context,
+	name string,
+	objInfo registryrest.UpdatedObjectInfo,
+	createValidation registryrest.ValidateObjectFunc,
+	updateValidation registryrest.ValidateObjectUpdateFunc,
+	forceAllowCreate bool,
+	options *v1.UpdateOptions) (runtime.Object, bool, error) {
+	return s.store.Update(ctx, name, objInfo, createValidation, updateValidation, forceAllowCreate, options)
+}
+
+var _ registryrest.RESTUpdateStrategy = &statusSubResourceStrategy{}
+
+// StatusSubResourceStrategy defines a default Strategy for the status subresource.
+type statusSubResourceStrategy struct {
+	registryrest.RESTUpdateStrategy
+}
+
+// PrepareForUpdate calls the PrepareForUpdate function on obj if supported, otherwise does nothing.
+func (s *statusSubResourceStrategy) PrepareForUpdate(ctx context.Context, obj, old runtime.Object) {
+	// should panic/fail-fast upon casting failure
+	statusObj := obj.(resource.ObjectWithStatusSubResource)
+	statusOld := old.(resource.ObjectWithStatusSubResource)
+	// only modifies status
+	statusObj.GetStatus().CopyTo(statusOld)
+	if err := util.DeepCopy(statusOld, statusObj); err != nil {
+		utilruntime.HandleError(err)
+	}
 }
 
 // common subresource storage
@@ -208,7 +262,7 @@ func (s *scaleSubResourceStorage) Update(ctx context.Context,
 	updateValidation registryrest.ValidateObjectUpdateFunc,
 	forceAllowCreate bool,
 	options *v1.UpdateOptions) (runtime.Object, bool, error) {
-	return s.parentStorage.Update(
+	updatedObj, updated, err := s.parentStorage.Update(
 		contextutil.WithParentStorage(ctx, s.parentStorage),
 		name,
 		&scaleUpdatedObjectInfo{reqObjInfo: objInfo},
@@ -216,6 +270,10 @@ func (s *scaleSubResourceStorage) Update(ctx context.Context,
 		toScaleUpdateValidation(updateValidation),
 		forceAllowCreate,
 		options)
+	if err != nil {
+		return nil, false, err
+	}
+	return updatedObj.(resource.ObjectWithScaleSubResource).GetScale(), updated, nil
 }
 
 var _ registryrest.UpdatedObjectInfo = &scaleUpdatedObjectInfo{}

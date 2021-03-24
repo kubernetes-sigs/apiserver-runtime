@@ -43,36 +43,10 @@ func New(obj resource.Object) ResourceHandlerProvider {
 	}
 }
 
-// NewStatus returns a new etcd backed request handler for the resource "status" subresource.
-func NewStatus(obj resource.ObjectWithStatusSubResource) (
-	parent resource.Object,
-	path string,
-	request resource.Object,
-	handler ResourceHandlerProvider) {
-	return obj, "status", obj, func(scheme *runtime.Scheme, optsGetter generic.RESTOptionsGetter) (rest.Storage, error) {
-		gvr := obj.GetGroupVersionResource()
-		s := &StatusSubResourceStrategy{Strategy: &DefaultStrategy{
-			Object:         obj,
-			ObjectTyper:    scheme,
-			TableConvertor: rest.NewDefaultTableConvertor(gvr.GroupResource()),
-		}}
-		return newStore(obj.New, obj.NewList, gvr, s, optsGetter, nil)
-	}
-}
-
 // NewWithStrategy returns a new etcd backed request handler using the provided Strategy.
 func NewWithStrategy(obj resource.Object, s Strategy) ResourceHandlerProvider {
 	return func(scheme *runtime.Scheme, optsGetter generic.RESTOptionsGetter) (rest.Storage, error) {
 		gvr := obj.GetGroupVersionResource()
-		return newStore(obj.New, obj.NewList, gvr, s, optsGetter, nil)
-	}
-}
-
-// NewStatusWithStrategy returns a new etcd backed request handler using the provided Strategy for the "status" subresource.
-func NewStatusWithStrategy(obj resource.Object, s Strategy) ResourceHandlerProvider {
-	return func(scheme *runtime.Scheme, optsGetter generic.RESTOptionsGetter) (rest.Storage, error) {
-		gvr := obj.GetGroupVersionResource()
-		s = StatusSubResourceStrategy{Strategy: s}
 		return newStore(obj.New, obj.NewList, gvr, s, optsGetter, nil)
 	}
 }
@@ -90,20 +64,6 @@ func NewWithFn(obj resource.Object, fn StoreFn) ResourceHandlerProvider {
 			TableConvertor: rest.NewDefaultTableConvertor(gvr.GroupResource()),
 		}
 		return newStore(obj.New, obj.NewList, gvr, s, optsGetter, fn)
-	}
-}
-
-// NewStatusWithFn returns a new etcd backed request handler for the "status" subresource, applying the
-// StoreFn to the Store.
-func NewStatusWithFn(obj resource.Object, fn StoreFn) ResourceHandlerProvider {
-	return func(scheme *runtime.Scheme, optsGetter generic.RESTOptionsGetter) (rest.Storage, error) {
-		gvr := obj.GetGroupVersionResource()
-		s := &DefaultStrategy{
-			Object:         obj,
-			ObjectTyper:    scheme,
-			TableConvertor: rest.NewDefaultTableConvertor(gvr.GroupResource()),
-		}
-		return newStore(obj.New, obj.NewList, gvr, &StatusSubResourceStrategy{Strategy: s}, optsGetter, fn)
 	}
 }
 
