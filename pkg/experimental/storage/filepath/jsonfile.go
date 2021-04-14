@@ -3,8 +3,11 @@ package filepath
 
 import (
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/rest"
+	"k8s.io/apiserver/pkg/server/storage"
+	"k8s.io/apiserver/pkg/storage/storagebackend"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
 	builderrest "sigs.k8s.io/apiserver-runtime/pkg/builder/rest"
 )
@@ -36,11 +39,17 @@ import (
 func NewJSONFilepathStorageProvider(obj resource.Object, rootPath string) builderrest.ResourceHandlerProvider {
 	return func(scheme *runtime.Scheme, getter generic.RESTOptionsGetter) (rest.Storage, error) {
 		gr := obj.GetGroupVersionResource().GroupResource()
-		opt, err := getter.GetRESTOptions(gr)
+		codec, _, err := storage.NewStorageCodec(storage.StorageCodecConfig{
+			StorageMediaType:  runtime.ContentTypeJSON,
+			StorageSerializer: serializer.NewCodecFactory(scheme),
+			StorageVersion:    scheme.PrioritizedVersionsForGroup(obj.GetGroupVersionResource().Group)[0],
+			MemoryVersion:     scheme.PrioritizedVersionsForGroup(obj.GetGroupVersionResource().Group)[0],
+			Config:            storagebackend.Config{}, // useless fields..
+		})
 		if err != nil {
 			return nil, err
 		}
-		codec := opt.StorageConfig.Codec
+
 		return NewFilepathREST(
 			gr,
 			codec,
