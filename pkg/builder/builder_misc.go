@@ -55,3 +55,11 @@ func (a *Server) ExposeLoopbackAuthorizer() *Server {
 		return s
 	})
 }
+
+// WithoutEtcd removes etcd related settings from apiserver.
+func (a *Server) WithoutEtcd() *Server {
+	return a.WithOptionsFns(func(o *ServerOptions) *ServerOptions {
+		o.RecommendedOptions.Etcd = nil
+		return o
+	})
+}
