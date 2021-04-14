@@ -115,7 +115,10 @@ func (o *WardleServerOptions) Config() (*apiserver.Config, error) {
 		return nil, fmt.Errorf("error creating self-signed certificates: %v", err)
 	}
 
-	o.RecommendedOptions.Etcd.StorageConfig.Paging = utilfeature.DefaultFeatureGate.Enabled(features.APIListChunking)
+	// change: allow etcd options to be nil
+	if o.RecommendedOptions.Etcd != nil {
+		o.RecommendedOptions.Etcd.StorageConfig.Paging = utilfeature.DefaultFeatureGate.Enabled(features.APIListChunking)
+	}
 
 	// change: apiserver-runtime
 	// ExtraAdmissionInitializers set through ApplyServerOptionsFns by appending to ServerOptionsFns
