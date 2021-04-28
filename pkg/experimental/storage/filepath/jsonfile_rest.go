@@ -416,6 +416,7 @@ func (w *jsonWatch) ResultChan() <-chan watch.Event {
 	return w.ch
 }
 
-func (f *filepathREST) ConvertToTable(ctx context.Context, object runtime.Object, tableOptions runtime.Object) (*metav1.Table, error) {
-	return &metav1.Table{}, nil
-}
+// TODO: implement custom table printer optionally
+// func (f *filepathREST) ConvertToTable(ctx context.Context, object runtime.Object, tableOptions runtime.Object) (*metav1.Table, error) {
+// 	return &metav1.Table{}, nil
+// }
