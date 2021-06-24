@@ -21,5 +21,4 @@ limitations under the License.
 // Note that this package is experimental and a work in progress.  Do not rely on this project for production
 // without first contacting the maintainers at kubebuilder@googlegroups.com.
 //
-// nolint:stylecheck,golint
-package apiserver_runtime
+package apiserver_runtime // nolint:stylecheck,revive
