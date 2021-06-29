@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/mod/modfile"
 )
 
 var bin, output string
@@ -166,15 +167,11 @@ func main() {
 	cmd.Flags().BoolVar(&install, "install-generators", true, "Go get the generators")
 
 	var defaultModule string
-	why := exec.Command("go", "mod", "why")
-	why.Stderr = os.Stderr
-	if m, err := why.Output(); err == nil {
-		parts := strings.Split(string(m), "\n")
-		if len(parts) > 1 {
-			defaultModule = parts[1]
+	cwd, _ := os.Getwd()
+	if modRoot := findModuleRoot(cwd); modRoot != "" {
+		if b, err := ioutil.ReadFile(path.Join(modRoot, "go.mod")); err == nil {
+			defaultModule = modfile.ModulePath(b)
 		}
-	} else {
-		fmt.Fprintf(os.Stderr, "cannot parse go module: %v\n", err)
 	}
 	cmd.Flags().StringVar(&module, "module", defaultModule, "Go module of the apiserver.")
 
@@ -225,4 +222,19 @@ func getCmd(cmd string, args ...string) *exec.Cmd {
 
 	e.Args = append(e.Args, args...)
 	return e
+}
+
+func findModuleRoot(dir string) string {
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir
+		}
+
+		parentDIR := path.Dir(dir)
+		if parentDIR == dir {
+			break
+		}
+		dir = parentDIR
+	}
+	return ""
 }
