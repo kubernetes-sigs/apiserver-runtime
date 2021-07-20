@@ -18,6 +18,7 @@ linters:
     - dogsled
     - dupl
     - errcheck
+    - exportloopref
     # - funlen # the kubernetes custom storage func signatures will always violate this rule.
     # - gochecknoinits
     - goconst
@@ -25,16 +26,14 @@ linters:
     - gocyclo
     - gofmt
     - goimports
-    - golint
     - gosec
     - gosimple
     - govet
     - ineffassign
-    - interfacer
     - lll
     - misspell
     - nakedret
-    - scopelint
+    - revive
     - staticcheck
     - structcheck
     - stylecheck

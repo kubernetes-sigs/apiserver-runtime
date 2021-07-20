@@ -8,7 +8,7 @@ import (
 
 type parentStorageContextKeyType string
 
-var parentStorageContextKey parentStorageContextKeyType = ""
+var parentStorageContextKey parentStorageContextKeyType
 
 // WithParentStorage creates a new child context w/ parent storage plumbed
 func WithParentStorage(ctx context.Context, storage rest.StandardStorage) context.Context {
