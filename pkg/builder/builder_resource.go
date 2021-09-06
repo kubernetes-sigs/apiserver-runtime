@@ -64,23 +64,23 @@ func (a *Server) WithResource(obj resource.Object) *Server {
 		return a
 	}
 
+	var parentStorageProvider rest.ResourceHandlerProvider
+
+	defer func() {
+		// automatically create status subresource if the object implements the status interface
+		a.withSubResourceIfExists(obj, parentStorageProvider)
+	}()
+
 	// If the type implements it's own storage, then use that
 	switch s := obj.(type) {
-	case resourcerest.Creator:
-		return a.forGroupVersionResource(gvr, rest.StaticHandlerProvider{Storage: s.(regsitryrest.Storage)}.Get)
-	case resourcerest.Updater:
-		return a.forGroupVersionResource(gvr, rest.StaticHandlerProvider{Storage: s.(regsitryrest.Storage)}.Get)
-	case resourcerest.Getter:
-		return a.forGroupVersionResource(gvr, rest.StaticHandlerProvider{Storage: s.(regsitryrest.Storage)}.Get)
-	case resourcerest.Lister:
-		return a.forGroupVersionResource(gvr, rest.StaticHandlerProvider{Storage: s.(regsitryrest.Storage)}.Get)
+	case resourcerest.Creator, resourcerest.Updater, resourcerest.Getter, resourcerest.Lister:
+		parentStorageProvider = rest.StaticHandlerProvider{Storage: s.(regsitryrest.Storage)}.Get
+	default:
+		parentStorageProvider = rest.New(obj)
 	}
 
-	parentStorageProvider := rest.New(obj)
 	_ = a.forGroupVersionResource(gvr, parentStorageProvider)
 
-	// automatically create status subresource if the object implements the status interface
-	a.withSubResourceIfExists(obj, parentStorageProvider)
 	return a
 }
 

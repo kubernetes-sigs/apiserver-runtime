@@ -11,7 +11,7 @@ type parentStorageContextKeyType string
 var parentStorageContextKey parentStorageContextKeyType
 
 // WithParentStorage creates a new child context w/ parent storage plumbed
-func WithParentStorage(ctx context.Context, storage rest.StandardStorage) context.Context {
+func WithParentStorage(ctx context.Context, storage rest.Storage) context.Context {
 	return context.WithValue(ctx, parentStorageContextKey, storage)
 }
 

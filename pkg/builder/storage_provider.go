@@ -49,11 +49,6 @@ func (s *subResourceStorageProvider) Get(scheme *runtime.Scheme, optsGetter gene
 	if err != nil {
 		return nil, err
 	}
-	stdParentStorage, ok := parentStorage.(registryrest.StandardStorage)
-	if !ok {
-		return nil, fmt.Errorf("parent storageProvider for %v/%v/%v must implement rest.StandardStorage",
-			s.subResourceGVR.Group, s.subResourceGVR.Version, s.subResourceGVR.Resource)
-	}
 
 	var subResourceStorage registryrest.Storage
 	if s.subResourceStorageProvider != nil {
@@ -65,17 +60,39 @@ func (s *subResourceStorageProvider) Get(scheme *runtime.Scheme, optsGetter gene
 
 	// status subresource
 	if strings.HasSuffix(s.subResourceGVR.Resource, "/status") {
+		stdParentStorage, ok := parentStorage.(registryrest.StandardStorage)
+		if !ok {
+			return nil, fmt.Errorf("parent storageProvider for %v/%v/%v must implement rest.StandardStorage",
+				s.subResourceGVR.Group, s.subResourceGVR.Version, s.subResourceGVR.Resource)
+		}
 		return createStatusSubResourceStorage(stdParentStorage)
 	}
 	// scale subresource
 	if strings.HasSuffix(s.subResourceGVR.Resource, "/scale") {
+		getter, ok := parentStorage.(registryrest.Getter)
+		if !ok {
+			return nil, fmt.Errorf("parent storageProvider for %v/%v/%v must implement rest.Getter",
+				s.subResourceGVR.Group, s.subResourceGVR.Version, s.subResourceGVR.Resource)
+		}
+		updater, ok := parentStorage.(registryrest.Updater)
+		if !ok {
+			return nil, fmt.Errorf("parent storageProvider for %v/%v/%v must implement rest.Updater",
+				s.subResourceGVR.Group, s.subResourceGVR.Version, s.subResourceGVR.Resource)
+		}
 		return &scaleSubResourceStorage{
-			parentStorage: stdParentStorage,
+			parentStorage:        parentStorage,
+			parentStorageGetter:  getter,
+			parentStorageUpdater: updater,
 		}, nil
 	}
 	// getter & updater
 	getterUpdaterSubResource, isGetterUpdater := subResourceStorage.(resource.GetterUpdaterSubResource)
 	if isGetterUpdater {
+		stdParentStorage, ok := parentStorage.(registryrest.StandardStorage)
+		if !ok {
+			return nil, fmt.Errorf("parent storageProvider for %v/%v/%v must implement rest.StandardStorage",
+				s.subResourceGVR.Group, s.subResourceGVR.Version, s.subResourceGVR.Resource)
+		}
 		return &commonSubResourceStorage{
 			parentStorage:          stdParentStorage,
 			subResourceConstructor: subResourceStorage,
@@ -86,8 +103,14 @@ func (s *subResourceStorageProvider) Get(scheme *runtime.Scheme, optsGetter gene
 	// connector
 	connectorSubResource, isConnector := subResourceStorage.(resource.ConnectorSubResource)
 	if isConnector {
+		getter, ok := parentStorage.(registryrest.Getter)
+		if !ok {
+			return nil, fmt.Errorf("parent storageProvider for %v/%v/%v must implement rest.Getter",
+				s.subResourceGVR.Group, s.subResourceGVR.Version, s.subResourceGVR.Resource)
+		}
 		return &connectorSubResourceStorage{
-			parentStorage:          stdParentStorage,
+			parentStorage:          parentStorage,
+			parentStorageGetter:    getter,
 			subResourceConstructor: subResourceStorage,
 			subResourceConnector:   connectorSubResource,
 		}, nil
@@ -195,7 +218,8 @@ func (c *commonSubResourceStorage) Update(ctx context.Context,
 
 // connector subresource storage
 type connectorSubResourceStorage struct {
-	parentStorage          registryrest.StandardStorage
+	parentStorage          registryrest.Storage
+	parentStorageGetter    registryrest.Getter
 	subResourceConstructor registryrest.Storage
 	subResourceConnector   registryrest.Connecter
 }
@@ -225,7 +249,9 @@ func (c *connectorSubResourceStorage) ConnectMethods() []string {
 
 // scale subresource storage
 type scaleSubResourceStorage struct {
-	parentStorage registryrest.StandardStorage
+	parentStorage        registryrest.Storage
+	parentStorageGetter  registryrest.Getter
+	parentStorageUpdater registryrest.Updater
 }
 
 func (s *scaleSubResourceStorage) GroupVersionKind(containingGV schema.GroupVersion) schema.GroupVersionKind {
@@ -241,7 +267,7 @@ func (s *scaleSubResourceStorage) New() runtime.Object {
 }
 
 func (s *scaleSubResourceStorage) Get(ctx context.Context, name string, options *v1.GetOptions) (runtime.Object, error) {
-	parentObj, err := s.parentStorage.Get(
+	parentObj, err := s.parentStorageGetter.Get(
 		contextutil.WithParentStorage(ctx, s.parentStorage),
 		name,
 		options)
@@ -262,7 +288,7 @@ func (s *scaleSubResourceStorage) Update(ctx context.Context,
 	updateValidation registryrest.ValidateObjectUpdateFunc,
 	forceAllowCreate bool,
 	options *v1.UpdateOptions) (runtime.Object, bool, error) {
-	updatedObj, updated, err := s.parentStorage.Update(
+	updatedObj, updated, err := s.parentStorageUpdater.Update(
 		contextutil.WithParentStorage(ctx, s.parentStorage),
 		name,
 		&scaleUpdatedObjectInfo{reqObjInfo: objInfo},
