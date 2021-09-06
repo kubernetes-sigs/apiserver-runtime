@@ -169,7 +169,7 @@ func main() {
 	var defaultModule string
 	cwd, _ := os.Getwd()
 	if modRoot := findModuleRoot(cwd); modRoot != "" {
-		if b, err := ioutil.ReadFile(path.Join(modRoot, "go.mod")); err == nil {
+		if b, err := ioutil.ReadFile(filepath.Clean(path.Join(modRoot, "go.mod"))); err == nil {
 			defaultModule = modfile.ModulePath(b)
 		}
 	}
