@@ -23,3 +23,13 @@ func GetParentStorage(ctx context.Context) (rest.StandardStorage, bool) {
 	}
 	return parentStorage.(rest.StandardStorage), true
 }
+
+// GetParentStorageGetter tries getting the get-only parent storage from
+// context.
+func GetParentStorageGetter(ctx context.Context) (rest.Getter, bool) {
+	parentStorage := ctx.Value(parentStorageContextKey)
+	if parentStorage == nil {
+		return nil, false
+	}
+	return parentStorage.(rest.Getter), true
+}
