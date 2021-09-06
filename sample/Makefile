@@ -23,7 +23,14 @@ codegen:
 	go generate
 
 genclients:
-	apiserver-runtime-gen -g client-gen -g deepcopy-gen -g informer-gen -g lister-gen -g openapi-gen
+	go run ../tools/apiserver-runtime-gen \
+		-g client-gen \
+		-g deepcopy-gen \
+		-g informer-gen \
+		-g lister-gen \
+		-g openapi-gen \
+		--module sigs.k8s.io/apiserver-runtime/sample \
+		--versions sigs.k8s.io/apiserver-runtime/sample/pkg/apis/sample/v1alpha1
 
 fix:
 	go fix ./...

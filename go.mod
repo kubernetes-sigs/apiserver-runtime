@@ -5,7 +5,6 @@ module sigs.k8s.io/apiserver-runtime
 go 1.16
 
 require (
-	github.com/go-openapi/spec v0.19.5
 	github.com/golangci/golangci-lint v1.41.1
 	github.com/google/gofuzz v1.1.0
 	github.com/rancher/kine v0.4.0
