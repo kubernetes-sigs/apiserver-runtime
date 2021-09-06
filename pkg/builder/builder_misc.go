@@ -2,6 +2,7 @@ package builder
 
 import (
 	"k8s.io/apimachinery/pkg/runtime"
+	genericapiserver "k8s.io/apiserver/pkg/server"
 	openapicommon "k8s.io/kube-openapi/pkg/common"
 	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/cmd/server"
 	"sigs.k8s.io/apiserver-runtime/pkg/util/loopback"
@@ -53,6 +54,15 @@ func (a *Server) ExposeLoopbackAuthorizer() *Server {
 	return a.WithServerFns(func(s *GenericAPIServer) *GenericAPIServer {
 		loopback.SetAuthorizer(s.Authorizer)
 		return s
+	})
+}
+
+// ExposeLoopbackMasterClientConfig exposes loopback client config for accessing the
+// configured master cluster's kube-apiserver as an external singleton.
+func (a *Server) ExposeLoopbackMasterClientConfig() *Server {
+	return a.WithConfigFns(func(config *genericapiserver.RecommendedConfig) *genericapiserver.RecommendedConfig {
+		loopback.SetLoopbackMasterClientConfig(config.ClientConfig)
+		return config
 	})
 }
 
