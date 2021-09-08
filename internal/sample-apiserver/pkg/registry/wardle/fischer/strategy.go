@@ -19,6 +19,7 @@ package fischer
 import (
 	"context"
 	"fmt"
+	"k8s.io/apiserver/pkg/registry/rest"
 
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
@@ -60,6 +61,10 @@ func SelectableFields(obj *wardle.Fischer) fields.Set {
 	return generic.ObjectMetaFieldsSet(&obj.ObjectMeta, true)
 }
 
+var _ rest.RESTCreateStrategy = fischerStrategy{}
+var _ rest.RESTUpdateStrategy = fischerStrategy{}
+var _ rest.RESTDeleteStrategy = fischerStrategy{}
+
 type fischerStrategy struct {
 	runtime.ObjectTyper
 	names.NameGenerator
@@ -92,4 +97,12 @@ func (fischerStrategy) Canonicalize(obj runtime.Object) {
 
 func (fischerStrategy) ValidateUpdate(ctx context.Context, obj, old runtime.Object) field.ErrorList {
 	return field.ErrorList{}
+}
+
+func (fischerStrategy) WarningsOnCreate(ctx context.Context, obj runtime.Object) []string {
+	return nil
+}
+
+func (fischerStrategy) WarningsOnUpdate(ctx context.Context, obj, old runtime.Object) []string {
+	return nil
 }

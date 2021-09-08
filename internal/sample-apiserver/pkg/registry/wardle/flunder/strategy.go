@@ -19,6 +19,7 @@ package flunder
 import (
 	"context"
 	"fmt"
+	"k8s.io/apiserver/pkg/registry/rest"
 
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
@@ -61,6 +62,10 @@ func SelectableFields(obj *wardle.Flunder) fields.Set {
 	return generic.ObjectMetaFieldsSet(&obj.ObjectMeta, true)
 }
 
+var _ rest.RESTCreateStrategy = flunderStrategy{}
+var _ rest.RESTUpdateStrategy = flunderStrategy{}
+var _ rest.RESTDeleteStrategy = flunderStrategy{}
+
 type flunderStrategy struct {
 	runtime.ObjectTyper
 	names.NameGenerator
@@ -94,4 +99,12 @@ func (flunderStrategy) Canonicalize(obj runtime.Object) {
 
 func (flunderStrategy) ValidateUpdate(ctx context.Context, obj, old runtime.Object) field.ErrorList {
 	return field.ErrorList{}
+}
+
+func (flunderStrategy) WarningsOnCreate(ctx context.Context, obj runtime.Object) []string {
+	return nil
+}
+
+func (flunderStrategy) WarningsOnUpdate(ctx context.Context, obj, old runtime.Object) []string {
+	return nil
 }

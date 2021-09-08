@@ -157,3 +157,13 @@ func (d DefaultStrategy) ConvertToTable(
 	}
 	return d.TableConvertor.ConvertToTable(ctx, obj, tableOptions)
 }
+
+// WarningsOnCreate sends warning header on create
+func (d DefaultStrategy) WarningsOnCreate(ctx context.Context, obj runtime.Object) []string {
+	return nil
+}
+
+// WarningsOnUpdate sends warning header on update
+func (d DefaultStrategy) WarningsOnUpdate(ctx context.Context, obj, old runtime.Object) []string {
+	return nil
+}

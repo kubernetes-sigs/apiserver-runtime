@@ -27,4 +27,22 @@ vet:
 	go vet ./tools/...
 
 sample:
-	(cd sample && make)
+	(cd sample && go run ../tools/apiserver-runtime-gen \
+    	-g client-gen \
+    	-g deepcopy-gen \
+    	-g informer-gen \
+    	-g lister-gen \
+    	-g openapi-gen \
+    	--module sigs.k8s.io/apiserver-runtime/sample \
+    	--versions sigs.k8s.io/apiserver-runtime/sample/pkg/apis/sample/v1alpha1)
+
+sample-apiserver:
+	(cd internal/sample-apiserver && go run ../../tools/apiserver-runtime-gen \
+    	-g client-gen \
+    	-g deepcopy-gen \
+    	-g informer-gen \
+    	-g lister-gen \
+    	-g openapi-gen \
+    	--module sigs.k8s.io/apiserver-runtime/internal/sample-apiserver \
+    	--versions sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apis/wardle/v1alpha1 \
+    	--versions sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apis/wardle/v1beta1 )
