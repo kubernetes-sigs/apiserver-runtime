@@ -6,11 +6,24 @@ import (
 	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/cmd/server"
 )
 
+var enableAuthorization bool
+
 // DisableAuthorization disables delegated authentication and authorization
 func (a *Server) DisableAuthorization() *Server {
 	server.ServerOptionsFns = append(server.ServerOptionsFns, func(o *ServerOptions) *ServerOptions {
-		o.RecommendedOptions.Authorization = nil
+		if !enableAuthorization {
+			o.RecommendedOptions.Authorization = nil
+		}
 		return o
+	})
+	server.FlagsFns = append(server.FlagsFns, func(fs *pflag.FlagSet) *pflag.FlagSet {
+		fs.BoolVar(&enableAuthorization, "enable-authorization", false,
+			"Enabling authorization will check if the incoming authenticated requests "+
+				"have sufficient permission for the requesting target. Deploying the apiserver "+
+				"inside a kubernetes cluster will delegate the authorization to the hosting "+
+				"kube-apiserver, otherwise specify `--authorization-kubeconfig` to explicitly "+
+				"set a kube-apiserver to talk to.")
+		return fs
 	})
 	return a
 }
