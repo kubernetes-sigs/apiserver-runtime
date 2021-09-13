@@ -19,9 +19,9 @@ package resourcestrategy
 import (
 	"context"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"k8s.io/apiserver/pkg/registry/rest"
 )
 
 // AllowCreateOnUpdater is invoked by the DefaultStrategy
@@ -83,9 +83,7 @@ type PrepareForUpdater interface {
 }
 
 // TableConverter functions are invoked when printing an object from `kubectl get`.
-type TableConverter interface {
-	ConvertToTable(ctx context.Context, tableOptions runtime.Object) (*metav1.Table, error)
-}
+type TableConverter rest.TableConvertor
 
 // Validater functions are invoked before an object is stored to validate the object during creation.  If Validate
 // is implemented for a type, it will be invoked before creating an object of that type.
