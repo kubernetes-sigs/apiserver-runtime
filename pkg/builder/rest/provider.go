@@ -44,12 +44,20 @@ func (p StaticHandlerProvider) Get(s *runtime.Scheme, g generic.RESTOptionsGette
 // storage plumbed in the context.
 type ParentStaticHandlerProvider struct {
 	rest.Storage
+	ParentProvider ResourceHandlerProvider
 }
 
 // Get returns itself as the handler
 func (p ParentStaticHandlerProvider) Get(s *runtime.Scheme, g generic.RESTOptionsGetter) (rest.Storage, error) {
-	if getter, isGetter := p.Storage.(rest.Getter); isGetter {
-		return parentPlumbedStorageProvider{delegate: getter}, nil
+	parentStorage, err := p.ParentProvider(s, g)
+	if err != nil {
+		return nil, err
+	}
+	if getter, isGetter := parentStorage.(rest.Getter); isGetter {
+		return parentPlumbedStorageProvider{
+			delegate:      getter,
+			parentStorage: parentStorage,
+		}, nil
 	}
 	return p.Storage, nil
 }
@@ -57,7 +65,8 @@ func (p ParentStaticHandlerProvider) Get(s *runtime.Scheme, g generic.RESTOption
 var _ rest.Getter = &parentPlumbedStorageProvider{}
 
 type parentPlumbedStorageProvider struct {
-	delegate rest.Getter
+	delegate      rest.Getter
+	parentStorage rest.Storage
 }
 
 func (p parentPlumbedStorageProvider) New() runtime.Object {
@@ -65,5 +74,5 @@ func (p parentPlumbedStorageProvider) New() runtime.Object {
 }
 
 func (p parentPlumbedStorageProvider) Get(ctx context.Context, name string, options *v1.GetOptions) (runtime.Object, error) {
-	return p.delegate.Get(contextutil.WithParentStorage(ctx, p.delegate.(rest.Storage)), name, options)
+	return p.delegate.Get(contextutil.WithParentStorage(ctx, p.parentStorage), name, options)
 }
