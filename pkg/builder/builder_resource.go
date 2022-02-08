@@ -192,7 +192,7 @@ func (a *Server) withSubResourceIfExists(obj resource.Object, parentStorageProvi
 		for _, sub := range sgs.GetArbitrarySubResources() {
 			sub := sub
 			subResourceGVR := parentGVR.GroupVersion().WithResource(parentGVR.Resource + "/" + sub.SubResourceName())
-			a.forGroupVersionSubResource(subResourceGVR, parentStorageProvider, rest.ParentStaticHandlerProvider{Storage: sub}.Get)
+			a.forGroupVersionSubResource(subResourceGVR, parentStorageProvider, rest.StaticHandlerProvider{Storage: sub}.Get)
 		}
 	}
 }
