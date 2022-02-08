@@ -16,6 +16,7 @@ import (
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	registryrest "k8s.io/apiserver/pkg/registry/rest"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/util"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/rest"
@@ -85,21 +86,6 @@ func (s *subResourceStorageProvider) Get(scheme *runtime.Scheme, optsGetter gene
 			parentStorageUpdater: updater,
 		}, nil
 	}
-	// getter & updater
-	getterUpdaterSubResource, isGetterUpdater := subResourceStorage.(resource.GetterUpdaterSubResource)
-	if isGetterUpdater {
-		stdParentStorage, ok := parentStorage.(registryrest.StandardStorage)
-		if !ok {
-			return nil, fmt.Errorf("parent storageProvider for %v/%v/%v must implement rest.StandardStorage",
-				s.subResourceGVR.Group, s.subResourceGVR.Version, s.subResourceGVR.Resource)
-		}
-		return &commonSubResourceStorage{
-			parentStorage:          stdParentStorage,
-			subResourceConstructor: subResourceStorage,
-			subResourceGetter:      getterUpdaterSubResource,
-			subResourceUpdater:     getterUpdaterSubResource,
-		}, nil
-	}
 	// connector
 	connectorSubResource, isConnector := subResourceStorage.(resource.ConnectorSubResource)
 	if isConnector {
@@ -114,6 +100,21 @@ func (s *subResourceStorageProvider) Get(scheme *runtime.Scheme, optsGetter gene
 			subResourceConstructor: subResourceStorage,
 			subResourceConnector:   connectorSubResource,
 		}, nil
+	}
+	// getter & updater
+	getterUpdaterSubResource, isGetterUpdater := subResourceStorage.(resource.GetterUpdaterSubResource)
+	if isGetterUpdater {
+		stdParentStorage, ok := parentStorage.(registryrest.StandardStorage)
+		if ok {
+			return &commonSubResourceStorage{
+				parentStorage:          stdParentStorage,
+				subResourceConstructor: subResourceStorage,
+				subResourceGetter:      getterUpdaterSubResource,
+				subResourceUpdater:     getterUpdaterSubResource,
+			}, nil
+		}
+		klog.Infof("Parent storageProvider for %v/%v/%v must implement rest.StandardStorage",
+			s.subResourceGVR.Group, s.subResourceGVR.Version, s.subResourceGVR.Resource)
 	}
 
 	// use the subresource storage directly

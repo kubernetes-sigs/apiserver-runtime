@@ -298,7 +298,7 @@ func (f *filepathREST) objectDirName(ctx context.Context) string {
 		ns, _ := genericapirequest.NamespaceFrom(ctx)
 		return filepath.Join(f.objRootPath, ns)
 	}
-	return filepath.Join(f.objRootPath)
+	return f.objRootPath
 }
 
 func write(encoder runtime.Encoder, filepath string, obj runtime.Object) error {
