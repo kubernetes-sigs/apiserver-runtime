@@ -54,8 +54,8 @@ func (p ParentStaticHandlerProvider) Get(s *runtime.Scheme, g generic.RESTOption
 	if err != nil {
 		return nil, err
 	}
-	getter, isGetter := parentStorage.(rest.Getter)
-	updater, isUpdater := parentStorage.(rest.Updater)
+	getter, isGetter := p.Storage.(rest.Getter)
+	updater, isUpdater := p.Storage.(rest.Updater)
 	switch {
 	case isGetter && isUpdater:
 		return parentPlumbedStorageGetterUpdaterProvider{
