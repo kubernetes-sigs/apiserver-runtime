@@ -19,6 +19,7 @@ package rest
 import (
 	"context"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/registry/generic"
@@ -53,8 +54,17 @@ func (p ParentStaticHandlerProvider) Get(s *runtime.Scheme, g generic.RESTOption
 	if err != nil {
 		return nil, err
 	}
-	if getter, isGetter := parentStorage.(rest.Getter); isGetter {
-		return parentPlumbedStorageProvider{
+	getter, isGetter := parentStorage.(rest.Getter)
+	updater, isUpdater := parentStorage.(rest.Updater)
+	switch {
+	case isGetter && isUpdater:
+		return parentPlumbedStorageGetterUpdaterProvider{
+			getter:        getter,
+			updater:       updater,
+			parentStorage: parentStorage,
+		}, nil
+	case isGetter:
+		return parentPlumbedStorageGetterProvider{
 			delegate:      getter,
 			parentStorage: parentStorage,
 		}, nil
@@ -62,17 +72,52 @@ func (p ParentStaticHandlerProvider) Get(s *runtime.Scheme, g generic.RESTOption
 	return p.Storage, nil
 }
 
-var _ rest.Getter = &parentPlumbedStorageProvider{}
+var _ rest.Getter = &parentPlumbedStorageGetterProvider{}
 
-type parentPlumbedStorageProvider struct {
+type parentPlumbedStorageGetterProvider struct {
 	delegate      rest.Getter
 	parentStorage rest.Storage
 }
 
-func (p parentPlumbedStorageProvider) New() runtime.Object {
+func (p parentPlumbedStorageGetterProvider) New() runtime.Object {
 	return p.delegate.(rest.Storage).New()
 }
 
-func (p parentPlumbedStorageProvider) Get(ctx context.Context, name string, options *v1.GetOptions) (runtime.Object, error) {
+func (p parentPlumbedStorageGetterProvider) Get(ctx context.Context, name string, options *v1.GetOptions) (runtime.Object, error) {
 	return p.delegate.Get(contextutil.WithParentStorage(ctx, p.parentStorage), name, options)
+}
+
+var _ rest.Getter = &parentPlumbedStorageGetterUpdaterProvider{}
+var _ rest.Updater = &parentPlumbedStorageGetterUpdaterProvider{}
+
+type parentPlumbedStorageGetterUpdaterProvider struct {
+	getter        rest.Getter
+	updater       rest.Updater
+	parentStorage rest.Storage
+}
+
+func (p parentPlumbedStorageGetterUpdaterProvider) New() runtime.Object {
+	return p.parentStorage.(rest.Storage).New()
+}
+
+func (p parentPlumbedStorageGetterUpdaterProvider) Get(ctx context.Context, name string, options *v1.GetOptions) (runtime.Object, error) {
+	return p.getter.Get(contextutil.WithParentStorage(ctx, p.parentStorage), name, options)
+}
+
+func (p parentPlumbedStorageGetterUpdaterProvider) Update(
+	ctx context.Context,
+	name string,
+	objInfo rest.UpdatedObjectInfo,
+	createValidation rest.ValidateObjectFunc,
+	updateValidation rest.ValidateObjectUpdateFunc,
+	forceAllowCreate bool,
+	options *metav1.UpdateOptions) (runtime.Object, bool, error) {
+	return p.updater.Update(
+		contextutil.WithParentStorage(ctx, p.parentStorage),
+		name,
+		objInfo,
+		createValidation,
+		updateValidation,
+		forceAllowCreate,
+		options)
 }
