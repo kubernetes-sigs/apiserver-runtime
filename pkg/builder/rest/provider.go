@@ -20,7 +20,6 @@ import (
 	"context"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/rest"
@@ -54,8 +53,8 @@ func (p ParentStaticHandlerProvider) Get(s *runtime.Scheme, g generic.RESTOption
 	if err != nil {
 		return nil, err
 	}
-	getter, isGetter := parentStorage.(rest.Getter)
-	updater, isUpdater := parentStorage.(rest.Updater)
+	getter, isGetter := p.Storage.(rest.Getter)
+	updater, isUpdater := p.Storage.(rest.Updater)
 	switch {
 	case isGetter && isUpdater:
 		return parentPlumbedStorageGetterUpdaterProvider{
@@ -80,10 +79,10 @@ type parentPlumbedStorageGetterProvider struct {
 }
 
 func (p parentPlumbedStorageGetterProvider) New() runtime.Object {
-	return p.delegate.(rest.Storage).New()
+	return p.parentStorage.New()
 }
 
-func (p parentPlumbedStorageGetterProvider) Get(ctx context.Context, name string, options *v1.GetOptions) (runtime.Object, error) {
+func (p parentPlumbedStorageGetterProvider) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	return p.delegate.Get(contextutil.WithParentStorage(ctx, p.parentStorage), name, options)
 }
 
@@ -97,10 +96,10 @@ type parentPlumbedStorageGetterUpdaterProvider struct {
 }
 
 func (p parentPlumbedStorageGetterUpdaterProvider) New() runtime.Object {
-	return p.parentStorage.(rest.Storage).New()
+	return p.parentStorage.New()
 }
 
-func (p parentPlumbedStorageGetterUpdaterProvider) Get(ctx context.Context, name string, options *v1.GetOptions) (runtime.Object, error) {
+func (p parentPlumbedStorageGetterUpdaterProvider) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	return p.getter.Get(contextutil.WithParentStorage(ctx, p.parentStorage), name, options)
 }
 
