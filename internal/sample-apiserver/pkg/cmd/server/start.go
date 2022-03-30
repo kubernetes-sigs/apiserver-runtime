@@ -89,8 +89,7 @@ func NewCommandStartWardleServer(defaults *WardleServerOptions, stopCh <-chan st
 // Validate validates WardleServerOptions
 func (o WardleServerOptions) Validate(args []string) error {
 	errors := []error{}
-	// TODO(1.21): revert this after https://github.com/kubernetes/kubernetes/pull/97954 fixed
-	errors = append(errors, ValidateRecommendedOptions(o.RecommendedOptions)...)
+	errors = append(errors, o.RecommendedOptions.Validate()...)
 	return utilerrors.NewAggregate(errors)
 }
 
