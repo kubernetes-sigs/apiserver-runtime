@@ -3,6 +3,7 @@ package builder
 import (
 	"k8s.io/apimachinery/pkg/runtime"
 	genericapiserver "k8s.io/apiserver/pkg/server"
+	"k8s.io/klog/v2"
 	openapicommon "k8s.io/kube-openapi/pkg/common"
 	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/cmd/server"
 	"sigs.k8s.io/apiserver-runtime/pkg/util/loopback"
@@ -21,6 +22,18 @@ import (
 func (a *Server) WithOpenAPIDefinitions(
 	name, version string, openAPI openapicommon.GetOpenAPIDefinitions) *Server {
 	server.SetOpenAPIDefinitions(name, version, openAPI)
+	return a
+}
+
+// WithPostStartHook registers a post start hook which will be invoked after the apiserver is started
+// and before it's ready for serving requests.
+func (a *Server) WithPostStartHook(name string, hookFunc genericapiserver.PostStartHookFunc) *Server {
+	a.WithServerFns(func(server *GenericAPIServer) *GenericAPIServer {
+		if err := server.AddPostStartHook(name, hookFunc); err != nil {
+			klog.Fatal("failed registering post-start hook %v: %v", name, err)
+		}
+		return server
+	})
 	return a
 }
 
