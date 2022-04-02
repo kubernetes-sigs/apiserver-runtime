@@ -46,3 +46,16 @@ sample-apiserver:
     	--module sigs.k8s.io/apiserver-runtime/internal/sample-apiserver \
     	--versions sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apis/wardle/v1alpha1 \
     	--versions sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apis/wardle/v1beta1 )
+
+release-binary:
+	mkdir -p bin
+	GOOS=linux go build -o bin/apiserver-runtime-gen ./tools/apiserver-runtime-gen
+	tar czvf apiserver-runtime-gen-linux.tar.gz bin/apiserver-runtime-gen
+	GOOS=darwin go build -o bin/apiserver-runtime-gen ./tools/apiserver-runtime-gen
+	tar czvf apiserver-runtime-gen-darwin.tar.gz bin/apiserver-runtime-gen
+	GOOS=windows go build -o bin/apiserver-runtime-gen ./tools/apiserver-runtime-gen
+	tar czvf apiserver-runtime-gen-windows.tar.gz bin/apiserver-runtime-gen
+
+clean:
+	rm -rf bin/
+	rm *.tar.gz
