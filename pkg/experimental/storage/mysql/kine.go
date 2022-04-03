@@ -7,7 +7,10 @@ import (
 	"time"
 
 	"github.com/k3s-io/kine/pkg/endpoint"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apiserver/pkg/registry/generic"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/storage/storagebackend"
@@ -35,15 +38,19 @@ func NewMysqlStorageProvider(host string, port int32, username, password, databa
 		port,
 		database)
 
-	return func(s *genericregistry.Store, options *generic.StoreOptions) {
+	return func(scheme *runtime.Scheme, s *genericregistry.Store, options *generic.StoreOptions) {
 		options.RESTOptions = &kineProxiedRESTOptionsGetter{
-			dsn: dsn,
+			scheme:         scheme,
+			dsn:            dsn,
+			groupVersioner: s.StorageVersioner,
 		}
 	}
 }
 
 type kineProxiedRESTOptionsGetter struct {
-	dsn string
+	scheme         *runtime.Scheme
+	dsn            string
+	groupVersioner runtime.GroupVersioner
 }
 
 // GetRESTOptions implements RESTOptionsGetter interface.
@@ -54,6 +61,9 @@ func (g *kineProxiedRESTOptionsGetter) GetRESTOptions(resource schema.GroupResou
 	if err != nil {
 		return generic.RESTOptions{}, err
 	}
+	s := json.NewSerializer(json.DefaultMetaFactory, g.scheme, g.scheme, false)
+	codec := serializer.NewCodecFactory(g.scheme).
+		CodecForVersions(s, s, g.groupVersioner, g.groupVersioner)
 	restOptions := generic.RESTOptions{
 		ResourcePrefix:            resource.String(),
 		Decorator:                 genericregistry.StorageWithCacher(),
@@ -61,11 +71,11 @@ func (g *kineProxiedRESTOptionsGetter) GetRESTOptions(resource schema.GroupResou
 		DeleteCollectionWorkers:   1,
 		CountMetricPollPeriod:     time.Minute,
 		StorageObjectCountTracker: request.NewStorageObjectCountTracker(context.Background().Done()),
-
 		StorageConfig: &storagebackend.ConfigForResource{
 			GroupResource: resource,
 			Config: storagebackend.Config{
 				Prefix: "/kine/",
+				Codec:  codec,
 				Transport: storagebackend.TransportConfig{
 					ServerList:    etcdConfig.Endpoints,
 					TrustedCAFile: etcdConfig.TLSConfig.CAFile,
