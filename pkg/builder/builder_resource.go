@@ -98,7 +98,11 @@ func (a *Server) WithResourceAndStrategy(obj resource.Object, strategy rest.Stra
 	_ = a.forGroupVersionResource(gvr, parentStorageProvider)
 
 	// automatically create status subresource if the object implements the status interface
-	a.withSubResourceIfExists(obj, parentStorageProvider)
+
+	defer func() {
+		// automatically create status subresource if the object implements the status interface
+		a.withSubResourceIfExists(obj, parentStorageProvider)
+	}()
 	return a
 }
 
@@ -112,6 +116,10 @@ func (a *Server) WithResourceAndStrategy(obj resource.Object, strategy rest.Stra
 func (a *Server) WithResourceAndHandler(obj resource.Object, sp rest.ResourceHandlerProvider) *Server {
 	gvr := obj.GetGroupVersionResource()
 	a.schemeBuilder.Register(resource.AddToScheme(obj))
+	defer func() {
+		// automatically create status subresource if the object implements the status interface
+		a.withSubResourceIfExists(obj, sp)
+	}()
 	return a.forGroupVersionResource(gvr, sp)
 }
 
@@ -126,7 +134,12 @@ func (a *Server) WithResourceAndHandler(obj resource.Object, sp rest.ResourceHan
 func (a *Server) WithResourceAndStorage(obj resource.Object, fn rest.StoreFn) *Server {
 	gvr := obj.GetGroupVersionResource()
 	a.schemeBuilder.Register(resource.AddToScheme(obj))
-	return a.forGroupVersionResource(gvr, rest.NewWithFn(obj, fn))
+	sp := rest.NewWithFn(obj, fn)
+	defer func() {
+		// automatically create status subresource if the object implements the status interface
+		a.withSubResourceIfExists(obj, sp)
+	}()
+	return a.forGroupVersionResource(gvr, sp)
 }
 
 // forGroupVersionResource manually registers storage for a specific resource.
