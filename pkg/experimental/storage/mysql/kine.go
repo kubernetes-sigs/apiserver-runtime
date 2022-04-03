@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/registry/generic"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
+	"k8s.io/apiserver/pkg/storage/storagebackend"
 	builderrest "sigs.k8s.io/apiserver-runtime/pkg/builder/rest"
 )
 
@@ -25,38 +26,41 @@ import (
 //             )).Build()
 //
 func NewMysqlStorageProvider(host string, port int32, username, password, database string) builderrest.StoreFn {
+	dsn := fmt.Sprintf("mysql://%s:%s@tcp(%s:%d)/%s",
+		username,
+		password,
+		host,
+		port,
+		database)
+
 	return func(s *genericregistry.Store, options *generic.StoreOptions) {
 		options.RESTOptions = &kineProxiedRESTOptionsGetter{
-			delegate: options.RESTOptions,
+			dsn: dsn,
 		}
 	}
 }
 
 type kineProxiedRESTOptionsGetter struct {
-	delegate generic.RESTOptionsGetter
+	dsn string
 }
 
 // GetRESTOptions implements RESTOptionsGetter interface.
 func (g *kineProxiedRESTOptionsGetter) GetRESTOptions(resource schema.GroupResource) (generic.RESTOptions, error) {
-	restOptions, err := g.delegate.GetRESTOptions(resource)
-	if err != nil {
-		return generic.RESTOptions{}, err
-	}
-
-	if len(restOptions.StorageConfig.Transport.ServerList) != 1 {
-		return generic.RESTOptions{}, fmt.Errorf("no valid mysql dsn found")
-	}
-
 	etcdConfig, err := endpoint.Listen(context.TODO(), endpoint.Config{
-		Endpoint: restOptions.StorageConfig.Transport.ServerList[0],
+		Endpoint: g.dsn,
 	})
 	if err != nil {
 		return generic.RESTOptions{}, err
 	}
-
-	restOptions.StorageConfig.Transport.ServerList = etcdConfig.Endpoints
-	restOptions.StorageConfig.Transport.TrustedCAFile = etcdConfig.TLSConfig.CAFile
-	restOptions.StorageConfig.Transport.CertFile = etcdConfig.TLSConfig.CertFile
-	restOptions.StorageConfig.Transport.KeyFile = etcdConfig.TLSConfig.KeyFile
+	restOptions := generic.RESTOptions{
+		StorageConfig: &storagebackend.Config{
+			Transport: storagebackend.TransportConfig{
+				ServerList:    etcdConfig.Endpoints,
+				TrustedCAFile: etcdConfig.TLSConfig.CAFile,
+				CertFile:      etcdConfig.TLSConfig.CertFile,
+				KeyFile:       etcdConfig.TLSConfig.KeyFile,
+			},
+		},
+	}
 	return restOptions, nil
 }
