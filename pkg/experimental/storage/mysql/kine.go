@@ -4,12 +4,13 @@ package mysql
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"time"
 
 	"github.com/k3s-io/kine/pkg/endpoint"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apiserver/pkg/registry/generic"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/storage/storagebackend"
@@ -60,8 +61,9 @@ func (g *kineProxiedRESTOptionsGetter) GetRESTOptions(resource schema.GroupResou
 	if err != nil {
 		return generic.RESTOptions{}, err
 	}
+	s := json.NewSerializer(json.DefaultMetaFactory, g.scheme, g.scheme, false)
 	codec := serializer.NewCodecFactory(g.scheme).
-		CodecForVersions(nil, nil, g.groupVersioner, g.groupVersioner)
+		CodecForVersions(s, s, g.groupVersioner, g.groupVersioner)
 	restOptions := generic.RESTOptions{
 		ResourcePrefix:            resource.String(),
 		Decorator:                 genericregistry.StorageWithCacher(),
