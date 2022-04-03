@@ -4,12 +4,14 @@ package mysql
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/k3s-io/kine/pkg/endpoint"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/registry/generic"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/storage/storagebackend"
+	"k8s.io/apiserver/pkg/util/flowcontrol/request"
 	builderrest "sigs.k8s.io/apiserver-runtime/pkg/builder/rest"
 )
 
@@ -53,9 +55,17 @@ func (g *kineProxiedRESTOptionsGetter) GetRESTOptions(resource schema.GroupResou
 		return generic.RESTOptions{}, err
 	}
 	restOptions := generic.RESTOptions{
+		ResourcePrefix:            resource.String(),
+		Decorator:                 genericregistry.StorageWithCacher(),
+		EnableGarbageCollection:   true,
+		DeleteCollectionWorkers:   1,
+		CountMetricPollPeriod:     time.Minute,
+		StorageObjectCountTracker: request.NewStorageObjectCountTracker(context.Background().Done()),
+
 		StorageConfig: &storagebackend.ConfigForResource{
 			GroupResource: resource,
 			Config: storagebackend.Config{
+				Prefix: "/kine/",
 				Transport: storagebackend.TransportConfig{
 					ServerList:    etcdConfig.Endpoints,
 					TrustedCAFile: etcdConfig.TLSConfig.CAFile,
