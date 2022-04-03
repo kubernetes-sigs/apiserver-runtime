@@ -53,12 +53,15 @@ func (g *kineProxiedRESTOptionsGetter) GetRESTOptions(resource schema.GroupResou
 		return generic.RESTOptions{}, err
 	}
 	restOptions := generic.RESTOptions{
-		StorageConfig: &storagebackend.Config{
-			Transport: storagebackend.TransportConfig{
-				ServerList:    etcdConfig.Endpoints,
-				TrustedCAFile: etcdConfig.TLSConfig.CAFile,
-				CertFile:      etcdConfig.TLSConfig.CertFile,
-				KeyFile:       etcdConfig.TLSConfig.KeyFile,
+		StorageConfig: &storagebackend.ConfigForResource{
+			GroupResource: resource,
+			Config: storagebackend.Config{
+				Transport: storagebackend.TransportConfig{
+					ServerList:    etcdConfig.Endpoints,
+					TrustedCAFile: etcdConfig.TLSConfig.CAFile,
+					CertFile:      etcdConfig.TLSConfig.CertFile,
+					KeyFile:       etcdConfig.TLSConfig.KeyFile,
+				},
 			},
 		},
 	}
