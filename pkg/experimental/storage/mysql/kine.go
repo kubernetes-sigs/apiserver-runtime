@@ -4,6 +4,8 @@ package mysql
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"time"
 
 	"github.com/k3s-io/kine/pkg/endpoint"
@@ -35,15 +37,19 @@ func NewMysqlStorageProvider(host string, port int32, username, password, databa
 		port,
 		database)
 
-	return func(s *genericregistry.Store, options *generic.StoreOptions) {
+	return func(scheme *runtime.Scheme, s *genericregistry.Store, options *generic.StoreOptions) {
 		options.RESTOptions = &kineProxiedRESTOptionsGetter{
-			dsn: dsn,
+			scheme:         scheme,
+			dsn:            dsn,
+			groupVersioner: s.StorageVersioner,
 		}
 	}
 }
 
 type kineProxiedRESTOptionsGetter struct {
-	dsn string
+	scheme         *runtime.Scheme
+	dsn            string
+	groupVersioner runtime.GroupVersioner
 }
 
 // GetRESTOptions implements RESTOptionsGetter interface.
@@ -54,6 +60,8 @@ func (g *kineProxiedRESTOptionsGetter) GetRESTOptions(resource schema.GroupResou
 	if err != nil {
 		return generic.RESTOptions{}, err
 	}
+	codec := serializer.NewCodecFactory(g.scheme).
+		CodecForVersions(nil, nil, g.groupVersioner, g.groupVersioner)
 	restOptions := generic.RESTOptions{
 		ResourcePrefix:            resource.String(),
 		Decorator:                 genericregistry.StorageWithCacher(),
@@ -61,11 +69,11 @@ func (g *kineProxiedRESTOptionsGetter) GetRESTOptions(resource schema.GroupResou
 		DeleteCollectionWorkers:   1,
 		CountMetricPollPeriod:     time.Minute,
 		StorageObjectCountTracker: request.NewStorageObjectCountTracker(context.Background().Done()),
-
 		StorageConfig: &storagebackend.ConfigForResource{
 			GroupResource: resource,
 			Config: storagebackend.Config{
 				Prefix: "/kine/",
+				Codec:  codec,
 				Transport: storagebackend.TransportConfig{
 					ServerList:    etcdConfig.Endpoints,
 					TrustedCAFile: etcdConfig.TLSConfig.CAFile,

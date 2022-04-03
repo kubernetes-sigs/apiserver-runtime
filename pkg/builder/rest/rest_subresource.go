@@ -29,6 +29,7 @@ func NewSubResourceWithStrategy(parent resource.Object, subResource resource.Sub
 		fullResourceName := parent.GetGroupVersionResource().Resource + "/" + subResource.SubResourceName()
 		gvr := parent.GetGroupVersionResource().GroupVersion().WithResource(fullResourceName)
 		return newStore(
+			scheme,
 			parent.New,
 			parent.NewList,
 			gvr,

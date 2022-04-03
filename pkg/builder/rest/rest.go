@@ -39,7 +39,7 @@ func New(obj resource.Object) ResourceHandlerProvider {
 			ObjectTyper:    scheme,
 			TableConvertor: rest.NewDefaultTableConvertor(gvr.GroupResource()),
 		}
-		return newStore(obj.New, obj.NewList, gvr, s, optsGetter, nil)
+		return newStore(scheme, obj.New, obj.NewList, gvr, s, optsGetter, nil)
 	}
 }
 
@@ -47,12 +47,12 @@ func New(obj resource.Object) ResourceHandlerProvider {
 func NewWithStrategy(obj resource.Object, s Strategy) ResourceHandlerProvider {
 	return func(scheme *runtime.Scheme, optsGetter generic.RESTOptionsGetter) (rest.Storage, error) {
 		gvr := obj.GetGroupVersionResource()
-		return newStore(obj.New, obj.NewList, gvr, s, optsGetter, nil)
+		return newStore(scheme, obj.New, obj.NewList, gvr, s, optsGetter, nil)
 	}
 }
 
 // StoreFn defines a function which modifies the Store before it is initialized.
-type StoreFn func(*genericregistry.Store, *generic.StoreOptions)
+type StoreFn func(*runtime.Scheme, *genericregistry.Store, *generic.StoreOptions)
 
 // NewWithFn returns a new etcd backed request handler, applying the StoreFn to the Store.
 func NewWithFn(obj resource.Object, fn StoreFn) ResourceHandlerProvider {
@@ -63,13 +63,15 @@ func NewWithFn(obj resource.Object, fn StoreFn) ResourceHandlerProvider {
 			ObjectTyper:    scheme,
 			TableConvertor: rest.NewDefaultTableConvertor(gvr.GroupResource()),
 		}
-		return newStore(obj.New, obj.NewList, gvr, s, optsGetter, fn)
+		return newStore(scheme, obj.New, obj.NewList, gvr, s, optsGetter, fn)
 	}
 }
 
 // newStore returns a RESTStorage object that will work against API services.
 func newStore(
-	single, list func() runtime.Object, gvr schema.GroupVersionResource,
+	scheme *runtime.Scheme,
+	single, list func() runtime.Object,
+	gvr schema.GroupVersionResource,
 	s Strategy, optsGetter generic.RESTOptionsGetter, fn StoreFn) (*genericregistry.Store, error) {
 	store := &genericregistry.Store{
 		NewFunc:                  single,
@@ -80,11 +82,12 @@ func newStore(
 		CreateStrategy:           s,
 		UpdateStrategy:           s,
 		DeleteStrategy:           s,
+		StorageVersioner:         gvr.GroupVersion(),
 	}
 
 	options := &generic.StoreOptions{RESTOptions: optsGetter, AttrFunc: GetAttrs}
 	if fn != nil {
-		fn(store, options)
+		fn(scheme, store, options)
 	}
 	if err := store.CompleteWithOptions(options); err != nil {
 		return nil, err
