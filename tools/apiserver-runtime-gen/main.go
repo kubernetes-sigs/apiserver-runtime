@@ -116,9 +116,17 @@ func doGen() error {
 	}
 
 	if gen["client-gen"] {
+		inputBase := ""
+		versionsInputs := inputs
+		// e.g. base = "example.io/foo/api", strippedVersions = "v1,v1beta1"
+		// e.g. base = "example.io/foo/pkg/apis", strippedVersions = "test/v1,test/v1beta1"
+		if base, strippedVersions, ok := findInputBase(module, versions); ok {
+			inputBase = base
+			versionsInputs = strings.Join(strippedVersions, ",")
+		}
 		err := run(getCmd("client-gen",
-			"--clientset-name", "versioned", "--input-base", "",
-			"--input", inputs, "--output-package", path.Join(module, "pkg/generated/clientset")))
+			"--clientset-name", "versioned", "--input-base", inputBase,
+			"--input", versionsInputs, "--output-package", path.Join(module, "pkg/generated/clientset")))
 		if err != nil {
 			return err
 		}
@@ -237,4 +245,33 @@ func findModuleRoot(dir string) string {
 		dir = parentDIR
 	}
 	return ""
+}
+
+func findInputBase(module string, versions []string) (string, []string, bool) {
+	if allHasPrefix(filepath.Join(module, "api"), versions) {
+		base := filepath.Join(module, "api")
+		return base, allTrimPrefix(base+"/", versions), true
+	}
+	if allHasPrefix(filepath.Join(module, "pkg", "apis"), versions) {
+		base := filepath.Join(module, "pkg", "apis")
+		return base, allTrimPrefix(base+"/", versions), true
+	}
+	return "", nil, false
+}
+
+func allHasPrefix(prefix string, paths []string) bool {
+	for _, p := range paths {
+		if !strings.HasPrefix(p, prefix) {
+			return false
+		}
+	}
+	return true
+}
+
+func allTrimPrefix(prefix string, versions []string) []string {
+	vs := make([]string, 0)
+	for _, v := range versions {
+		vs = append(vs, strings.TrimPrefix(v, prefix))
+	}
+	return vs
 }
