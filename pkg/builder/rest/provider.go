@@ -82,6 +82,10 @@ func (p parentPlumbedStorageGetterProvider) New() runtime.Object {
 	return p.parentStorage.New()
 }
 
+func (p parentPlumbedStorageGetterProvider) Destroy() {
+  p.parentStorage.Destroy()
+}
+
 func (p parentPlumbedStorageGetterProvider) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	return p.delegate.Get(contextutil.WithParentStorage(ctx, p.parentStorage), name, options)
 }
@@ -97,6 +101,10 @@ type parentPlumbedStorageGetterUpdaterProvider struct {
 
 func (p parentPlumbedStorageGetterUpdaterProvider) New() runtime.Object {
 	return p.parentStorage.New()
+}
+
+func (p parentPlumbedStorageGetterUpdaterProvider) Destroy() {
+	p.parentStorage.Destroy()
 }
 
 func (p parentPlumbedStorageGetterUpdaterProvider) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {

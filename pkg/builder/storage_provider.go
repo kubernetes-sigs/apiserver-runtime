@@ -149,6 +149,10 @@ func (s *statusSubResourceStorage) New() runtime.Object {
 	return s.store.New()
 }
 
+func (s *statusSubResourceStorage) Destroy() {
+  s.store.Destroy()
+}
+
 func (s *statusSubResourceStorage) Update(ctx context.Context,
 	name string,
 	objInfo registryrest.UpdatedObjectInfo,
@@ -193,6 +197,10 @@ func (c *commonSubResourceStorage) New() runtime.Object {
 	return c.subResourceConstructor.New()
 }
 
+func (c *commonSubResourceStorage) Destroy() {
+	c.subResourceConstructor.Destroy()
+}
+
 func (c *commonSubResourceStorage) Get(ctx context.Context, name string, options *v1.GetOptions) (runtime.Object, error) {
 	return c.subResourceGetter.Get(
 		contextutil.WithParentStorage(ctx, c.parentStorage),
@@ -232,6 +240,10 @@ func (c *connectorSubResourceStorage) New() runtime.Object {
 	return c.subResourceConstructor.New()
 }
 
+func (c *connectorSubResourceStorage) Destroy() {
+	c.subResourceConstructor.Destroy()
+}
+
 func (c *connectorSubResourceStorage) Connect(ctx context.Context, id string, options runtime.Object, r registryrest.Responder) (http.Handler, error) {
 	return c.subResourceConnector.Connect(
 		contextutil.WithParentStorage(ctx, c.parentStorage),
@@ -265,6 +277,10 @@ var _ registryrest.Updater = &scaleSubResourceStorage{}
 
 func (s *scaleSubResourceStorage) New() runtime.Object {
 	return &autoscalingv1.Scale{}
+}
+
+func (s *scaleSubResourceStorage) Destroy() {
+	s.parentStorage.Destroy()
 }
 
 func (s *scaleSubResourceStorage) Get(ctx context.Context, name string, options *v1.GetOptions) (runtime.Object, error) {
