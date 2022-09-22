@@ -85,6 +85,9 @@ func (f *filepathREST) New() runtime.Object {
 	return f.newFunc()
 }
 
+func (f *filepathREST) Destroy() {
+}
+
 func (f *filepathREST) NewList() runtime.Object {
 	return f.newListFunc()
 }

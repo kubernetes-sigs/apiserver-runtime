@@ -70,7 +70,7 @@ func (g *kineProxiedRESTOptionsGetter) GetRESTOptions(resource schema.GroupResou
 		EnableGarbageCollection:   true,
 		DeleteCollectionWorkers:   1,
 		CountMetricPollPeriod:     time.Minute,
-		StorageObjectCountTracker: request.NewStorageObjectCountTracker(context.Background().Done()),
+		StorageObjectCountTracker: request.NewStorageObjectCountTracker(),
 		StorageConfig: &storagebackend.ConfigForResource{
 			GroupResource: resource,
 			Config: storagebackend.Config{
