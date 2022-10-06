@@ -30,7 +30,7 @@ func (a *Server) WithOpenAPIDefinitions(
 func (a *Server) WithPostStartHook(name string, hookFunc genericapiserver.PostStartHookFunc) *Server {
 	a.WithServerFns(func(server *GenericAPIServer) *GenericAPIServer {
 		if err := server.AddPostStartHook(name, hookFunc); err != nil {
-			klog.Fatal("failed registering post-start hook %v: %v", name, err)
+			klog.Fatalf("failed registering post-start hook %q: %v", name, err)
 		}
 		return server
 	})
