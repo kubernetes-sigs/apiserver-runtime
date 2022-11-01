@@ -15,21 +15,21 @@ import (
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/storage/storagebackend"
 	"k8s.io/apiserver/pkg/util/flowcontrol/request"
+
 	builderrest "sigs.k8s.io/apiserver-runtime/pkg/builder/rest"
 )
 
 // NewMysqlStorageProvider replaces underlying persistent layer (which by default is etcd) w/ MySQL.
 // An example of storaing example resource to Mysql will be:
 //
-//     builder.APIServer.
-//       WithResourceAndStorage(&v1alpha1.ExampleResource{}, mysql.NewMysqlStorageProvider(
-//             "", // mysql host name		e.g. "127.0.0.1"
-//             0,  // mysql password 		e.g. 3306
-//             "", // mysql username 		e.g. "mysql"
-//             "", // mysql password 		e.g. "password"
-//             "", // mysql database name 	e.g. "mydb"
-//             )).Build()
-//
+//	builder.APIServer.
+//	  WithResourceAndStorage(&v1alpha1.ExampleResource{}, mysql.NewMysqlStorageProvider(
+//	        "", // mysql host name		e.g. "127.0.0.1"
+//	        0,  // mysql password 		e.g. 3306
+//	        "", // mysql username 		e.g. "mysql"
+//	        "", // mysql password 		e.g. "password"
+//	        "", // mysql database name 	e.g. "mydb"
+//	        )).Build()
 func NewMysqlStorageProvider(host string, port int32, username, password, database string) builderrest.StoreFn {
 	dsn := fmt.Sprintf("mysql://%s:%s@tcp(%s:%d)/%s",
 		username,
@@ -70,7 +70,7 @@ func (g *kineProxiedRESTOptionsGetter) GetRESTOptions(resource schema.GroupResou
 		EnableGarbageCollection:   true,
 		DeleteCollectionWorkers:   1,
 		CountMetricPollPeriod:     time.Minute,
-		StorageObjectCountTracker: request.NewStorageObjectCountTracker(context.Background().Done()),
+		StorageObjectCountTracker: request.NewStorageObjectCountTracker(),
 		StorageConfig: &storagebackend.ConfigForResource{
 			GroupResource: resource,
 			Config: storagebackend.Config{

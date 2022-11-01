@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/rest"
+
 	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apiserver"
 	contextutil "sigs.k8s.io/apiserver-runtime/pkg/util/context"
 )
@@ -82,6 +83,8 @@ func (p parentPlumbedStorageGetterProvider) New() runtime.Object {
 	return p.parentStorage.New()
 }
 
+func (p parentPlumbedStorageGetterProvider) Destroy() {}
+
 func (p parentPlumbedStorageGetterProvider) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	return p.delegate.Get(contextutil.WithParentStorage(ctx, p.parentStorage), name, options)
 }
@@ -98,6 +101,8 @@ type parentPlumbedStorageGetterUpdaterProvider struct {
 func (p parentPlumbedStorageGetterUpdaterProvider) New() runtime.Object {
 	return p.parentStorage.New()
 }
+
+func (p parentPlumbedStorageGetterUpdaterProvider) Destroy() {}
 
 func (p parentPlumbedStorageGetterUpdaterProvider) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	return p.getter.Get(contextutil.WithParentStorage(ctx, p.parentStorage), name, options)

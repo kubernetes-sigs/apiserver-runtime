@@ -17,25 +17,26 @@ import (
 //   - For namespaced-scoped resources: the resource will be written under the root-path in
 //     the following structure:
 //
-//       -- (root-path) --- /namespace1/ --- resource1
-//                      |                |
-//                      |                --- resource2
-//                      |
-//                      --- /namespace2/ --- resource3
+//     -- (root-path) --- /namespace1/ --- resource1
+//     |                |
+//     |                --- resource2
+//     |
+//     --- /namespace2/ --- resource3
+//
 //   - For cluster-scoped resources, there will be no mid-layer folders for namespaces:
 //
-//       -- (root-path) --- resource1
-//                      |
-//                      --- resource2
-//                      |
-//                      --- resource3
+//     -- (root-path) --- resource1
+//     |
+//     --- resource2
+//     |
+//     --- resource3
 //
 // An example of storing example resource to local filepath will be:
 //
-//     builder.APIServer.
-//       WithResourceAndHandler(&v1alpha1.ExampleResource{},
-//             jsonfile.NewJsonFileStorageProvider(&v1alpha1.ExampleResource{}, /*the root file-path*/ "data")).
-//       Build()
+//	builder.APIServer.
+//	  WithResourceAndHandler(&v1alpha1.ExampleResource{},
+//	        jsonfile.NewJsonFileStorageProvider(&v1alpha1.ExampleResource{}, /*the root file-path*/ "data")).
+//	  Build()
 func NewJSONFilepathStorageProvider(obj resource.Object, rootPath string) builderrest.ResourceHandlerProvider {
 	return func(scheme *runtime.Scheme, getter generic.RESTOptionsGetter) (rest.Storage, error) {
 		gr := obj.GetGroupVersionResource().GroupResource()
