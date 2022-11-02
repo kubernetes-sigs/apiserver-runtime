@@ -16,14 +16,14 @@ limitations under the License.
 
 // Package builder contains a builder for creating a new Kubernetes apiserver.
 //
-// API Extension Servers
+// # API Extension Servers
 //
 // API extension servers and apiserver aggregation are techniques for extending the Kubernetes API surface
 // without using CRDs.  Rather than registering a resource type as a CRD stored by the apiserver in etcd, apiserver
 // aggregation registers REST endpoints provided by the extension server, and requests are proxied by the main
 // control-plane apiserver to the extension apiserver.
 //
-// Use Cases
+// # Use Cases
 //
 // Following are use cases where one may consider using an extension API server rather than CRDs for implementing
 // an extension resource type.
@@ -34,7 +34,7 @@ limitations under the License.
 //
 // * Using a separate etcd instance for the extension types
 //
-// Registering Types
+// # Registering Types
 //
 // New resource types may be registered with the API server by implementing the go struct for the type under
 // YOUR_MODULE/pkg/apis/YOUR_GROUP/VERSION/types.go and then calling WithResource.
@@ -42,24 +42,24 @@ limitations under the License.
 //
 // Install the code generators (from your module):
 //
-//    $ go get sigs.k8s.io/apiserver-runtime/tools/apiserver-runtime-gen
-//    $ apiserver-runtime-gen --install-generators
+//	$ go get sigs.k8s.io/apiserver-runtime/tools/apiserver-runtime-gen
+//	$ apiserver-runtime-gen --install-generators
 //
 // Add the code generation tag to you main package:
 //
-//    //go:generate apiserver-runtime-gen
-//    package main
+//	//go:generate apiserver-runtime-gen
+//	package main
 //
 // Run the code generation after having defined your types:
 //
-//    $ go generate ./...
+//	$ go generate ./...
 //
 // To also generate clients, provide the -g option to apiserver-runtime-gen for the client, lister and informer
 // generators.
 //
-//    $ apiserver-runtime-gen -g client-gen -g deepcopy-gen -g informer-gen -g lister-gen -g openapi-gen
+//	$ apiserver-runtime-gen -g client-gen -g deepcopy-gen -g informer-gen -g lister-gen -g openapi-gen
 //
-// Implementing Type Specific Logic
+// # Implementing Type Specific Logic
 //
 // * How an object is stored may be customized by either 1) implementing interfaces defined in
 // pkg/builder/resource/resourcestrategy or 2) providing a Strategy when registering the type with the builder.

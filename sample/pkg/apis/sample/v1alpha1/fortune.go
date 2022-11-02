@@ -59,7 +59,6 @@ func (f Fortune) convertToTable(_ context.Context, tableOptions runtime.Object) 
 		return nil, err
 	}
 	c.ResourceVersion = f.GetResourceVersion()
-	c.SelfLink = f.GetSelfLink()
 	c.setOptions(tableOptions)
 	return &c.Table, nil
 }
@@ -72,7 +71,6 @@ func (f FortuneList) convertToTable(_ context.Context, tableOptions runtime.Obje
 	}
 	c.setOptions(tableOptions)
 	c.ResourceVersion = f.GetResourceVersion()
-	c.SelfLink = f.GetSelfLink()
 	c.Continue = f.GetContinue()
 	c.RemainingItemCount = f.GetRemainingItemCount()
 	return &c.Table, nil

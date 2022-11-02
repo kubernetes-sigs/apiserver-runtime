@@ -1,8 +1,7 @@
-package main
+package main // nolint:revive
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -46,7 +45,7 @@ func runE(cmd *cobra.Command, args []string) error {
 	if install {
 		for _, gen := range generators {
 			// nolint:gosec
-			err := run(exec.Command("go", "get", path.Join("k8s.io/code-generator/cmd", gen)))
+			err := run(exec.Command("go", "install", path.Join("k8s.io/code-generator/cmd", gen)))
 			if err != nil {
 				return err
 			}
@@ -55,7 +54,7 @@ func runE(cmd *cobra.Command, args []string) error {
 
 	// setup the directory to generate the code to.
 	// code generators don't work with go modules, and try the full path of the module
-	output, err = ioutil.TempDir("", "gen")
+	output, err = os.MkdirTemp("", "gen")
 	if err != nil {
 		return err
 	}
@@ -177,7 +176,7 @@ func main() {
 	var defaultModule string
 	cwd, _ := os.Getwd()
 	if modRoot := findModuleRoot(cwd); modRoot != "" {
-		if b, err := ioutil.ReadFile(filepath.Clean(path.Join(modRoot, "go.mod"))); err == nil {
+		if b, err := os.ReadFile(filepath.Clean(path.Join(modRoot, "go.mod"))); err == nil {
 			defaultModule = modfile.ModulePath(b)
 		}
 	}
@@ -185,10 +184,10 @@ func main() {
 
 	// calculate the versions
 	var defaultVersions []string
-	if files, err := ioutil.ReadDir(filepath.Join("pkg", "apis")); err == nil {
+	if files, err := os.ReadDir(filepath.Join("pkg", "apis")); err == nil {
 		for _, f := range files {
 			if f.IsDir() {
-				versionFiles, err := ioutil.ReadDir(filepath.Join("pkg", "apis", f.Name()))
+				versionFiles, err := os.ReadDir(filepath.Join("pkg", "apis", f.Name()))
 				if err != nil {
 					log.Fatal(err)
 				}

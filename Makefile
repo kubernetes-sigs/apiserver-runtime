@@ -13,7 +13,7 @@ fmt:
 	test -z $(go fmt ./tools/...)
 
 lint:
-	(which golangci-lint || go get github.com/golangci/golangci-lint/cmd/golangci-lint)
+	(which golangci-lint || go install github.com/golangci/golangci-lint/cmd/golangci-lint)
 	$(GOBIN)/golangci-lint run ./...
 
 test:

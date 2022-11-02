@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -84,6 +83,8 @@ func (f *filepathREST) notifyWatchers(ev watch.Event) {
 func (f *filepathREST) New() runtime.Object {
 	return f.newFunc()
 }
+
+func (f *filepathREST) Destroy() {}
 
 func (f *filepathREST) NewList() runtime.Object {
 	return f.newListFunc()
@@ -306,11 +307,11 @@ func write(encoder runtime.Encoder, filepath string, obj runtime.Object) error {
 	if err := encoder.Encode(obj, buf); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath, buf.Bytes(), 0600)
+	return os.WriteFile(filepath, buf.Bytes(), 0600)
 }
 
 func read(decoder runtime.Decoder, path string, newFunc func() runtime.Object) (runtime.Object, error) {
-	content, err := ioutil.ReadFile(filepath.Clean(path))
+	content, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, err
 	}

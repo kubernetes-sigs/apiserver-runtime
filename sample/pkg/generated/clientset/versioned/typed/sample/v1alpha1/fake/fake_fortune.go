@@ -105,7 +105,7 @@ func (c *FakeFortunes) Update(ctx context.Context, fortune *v1alpha1.Fortune, op
 // Delete takes name of the fortune and deletes it. Returns an error if one occurs.
 func (c *FakeFortunes) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(fortunesResource, c.ns, name), &v1alpha1.Fortune{})
+		Invokes(testing.NewDeleteActionWithOptions(fortunesResource, c.ns, name, opts), &v1alpha1.Fortune{})
 
 	return err
 }
