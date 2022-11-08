@@ -20,7 +20,7 @@ package main
 import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // register auth plugins
 	"k8s.io/component-base/logs"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder"
 	"sigs.k8s.io/apiserver-runtime/sample/pkg/apis/sample/v1alpha1"
 	"sigs.k8s.io/apiserver-runtime/sample/pkg/generated/openapi"

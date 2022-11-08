@@ -18,7 +18,6 @@ require (
 	k8s.io/client-go v0.25.3
 	k8s.io/code-generator v0.25.3
 	k8s.io/component-base v0.25.3
-	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.70.1
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1
 )
