@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	genericapiserver "k8s.io/apiserver/pkg/server"
+
 	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apiserver"
 	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/cmd/server"
 )
@@ -49,16 +50,16 @@ func (a *Server) Build() (*Command, error) {
 	a.schemes = append(a.schemes, apiserver.Scheme)
 	a.schemeBuilder.Register(
 		func(scheme *runtime.Scheme) error {
-			groupVersions := make(map[string]sets.String)
+			groupVersions := make(map[string]sets.Set[string])
 			for gvr := range apiserver.APIs {
 				if groupVersions[gvr.Group] == nil {
-					groupVersions[gvr.Group] = sets.NewString()
+					groupVersions[gvr.Group] = sets.New[string]()
 				}
 				groupVersions[gvr.Group].Insert(gvr.Version)
 			}
 			for g, versions := range groupVersions {
 				gvs := []schema.GroupVersion{}
-				for _, v := range versions.List() {
+				for v := range versions {
 					gvs = append(gvs, schema.GroupVersion{
 						Group:   g,
 						Version: v,
