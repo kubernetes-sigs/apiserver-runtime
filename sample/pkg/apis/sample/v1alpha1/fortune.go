@@ -104,6 +104,9 @@ func (Fortune) New() runtime.Object {
 	return &Fortune{}
 }
 
+// Destory implements rest.Storage
+func (f Fortune) Destroy() {}
+
 // NewList implements resource.Object
 func (Fortune) NewList() runtime.Object {
 	return &FortuneList{}

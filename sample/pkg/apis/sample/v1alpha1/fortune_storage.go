@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apiserver/pkg/registry/rest"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/resourcerest"
 )
 
@@ -18,6 +19,7 @@ import (
 var _ resourcerest.Getter = &Fortune{}
 var _ resourcerest.Lister = &Fortune{}
 var _ resourcerest.TableConvertor = &Fortune{}
+var _ rest.Storage = &Fortune{}
 
 // ConvertToTable handles table printing from kubectl get
 func (f *Fortune) ConvertToTable(ctx context.Context, object runtime.Object, tableOptions runtime.Object) (*metav1.Table, error) {
