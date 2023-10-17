@@ -40,7 +40,7 @@ func AddToScheme(objs ...Object) func(s *runtime.Scheme) error {
 					return err
 				}
 				if err := s.AddConversionFunc(storageVersionObj, obj, func(from, to interface{}, _ conversion.Scope) error {
-					return from.(MultiVersionObject).ConvertFromStorageVersion(to.(runtime.Object))
+					return to.(MultiVersionObject).ConvertFromStorageVersion(from.(runtime.Object))
 				}); err != nil {
 					return err
 				}
