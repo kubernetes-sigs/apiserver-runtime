@@ -35,7 +35,7 @@ import (
 //
 //	builder.APIServer.
 //	  WithResourceAndHandler(&v1alpha1.ExampleResource{},
-//	        jsonfile.NewJsonFileStorageProvider(&v1alpha1.ExampleResource{}, /*the root file-path*/ "data")).
+//	        jsonfile.NewJSONFilepathStorageProvider(&v1alpha1.ExampleResource{}, /*the root file-path*/ "data")).
 //	  Build()
 func NewJSONFilepathStorageProvider(obj resource.Object, rootPath string) builderrest.ResourceHandlerProvider {
 	return func(scheme *runtime.Scheme, getter generic.RESTOptionsGetter) (rest.Storage, error) {
