@@ -6,7 +6,7 @@ on:
       - 'v*.*.*'
 env:
   # Common versions
-  GO_VERSION: '1.19'
+  GO_VERSION: '1.22'
   GO_REQUIRED_MIN_VERSION: ''
   GITHUB_REF: ${{ github.ref }}
 

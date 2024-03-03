@@ -57,7 +57,12 @@ func ApplyFlagsFns(fs *pflag.FlagSet) *pflag.FlagSet {
 
 func SetOpenAPIDefinitions(name, version string, defs openapicommon.GetOpenAPIDefinitions) {
 	RecommendedConfigFns = append(RecommendedConfigFns, func(config *pkgserver.RecommendedConfig) *pkgserver.RecommendedConfig {
-		config.OpenAPIV3Config = pkgserver.DefaultOpenAPIConfig(defs, openapi.NewDefinitionNamer(apiserver.Scheme))
+
+		config.OpenAPIConfig = pkgserver.DefaultOpenAPIConfig(defs, openapi.NewDefinitionNamer(apiserver.Scheme))
+		config.OpenAPIConfig.Info.Title = name
+		config.OpenAPIConfig.Info.Version = version
+
+		config.OpenAPIV3Config = pkgserver.DefaultOpenAPIV3Config(defs, openapi.NewDefinitionNamer(apiserver.Scheme))
 		config.OpenAPIV3Config.Info.Title = name
 		config.OpenAPIV3Config.Info.Version = version
 		return config
