@@ -60,6 +60,10 @@ func SetOpenAPIDefinitions(name, version string, defs openapicommon.GetOpenAPIDe
 		config.OpenAPIConfig = pkgserver.DefaultOpenAPIConfig(defs, openapi.NewDefinitionNamer(apiserver.Scheme))
 		config.OpenAPIConfig.Info.Title = name
 		config.OpenAPIConfig.Info.Version = version
+
+		config.OpenAPIV3Config = pkgserver.DefaultOpenAPIV3Config(defs, openapi.NewDefinitionNamer(apiserver.Scheme))
+		config.OpenAPIV3Config.Info.Title = name
+		config.OpenAPIV3Config.Info.Version = version
 		return config
 	})
 }
