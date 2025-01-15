@@ -25,10 +25,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apiserver/pkg/admission"
-	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/admission/wardleinitializer"
-	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apis/wardle"
-	informers "sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/generated/informers/externalversions"
-	listers "sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/generated/listers/wardle/v1alpha1"
+	"k8s.io/sample-apiserver/pkg/admission/wardleinitializer"
+	"k8s.io/sample-apiserver/pkg/apis/wardle"
+	informers "k8s.io/sample-apiserver/pkg/generated/informers/externalversions"
+	listers "k8s.io/sample-apiserver/pkg/generated/listers/wardle/v1alpha1"
 )
 
 // Register registers a plugin
@@ -38,6 +38,7 @@ func Register(plugins *admission.Plugins) {
 	})
 }
 
+// DisallowFlunder is a ban flunder admission plugin
 type DisallowFlunder struct {
 	*admission.Handler
 	lister listers.FischerLister

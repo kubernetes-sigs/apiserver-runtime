@@ -26,7 +26,7 @@ import (
 
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-	wardle "sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apis/wardle"
+	wardle "k8s.io/sample-apiserver/pkg/apis/wardle"
 )
 
 func init() {

@@ -21,8 +21,8 @@ import (
 	"k8s.io/apiserver/pkg/registry/generic"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
-	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apis/wardle"
-	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/registry"
+	"k8s.io/sample-apiserver/pkg/apis/wardle"
+	"k8s.io/sample-apiserver/pkg/registry"
 )
 
 // NewREST returns a RESTStorage object that will work against API services.
@@ -30,10 +30,11 @@ func NewREST(scheme *runtime.Scheme, optsGetter generic.RESTOptionsGetter) (*reg
 	strategy := NewStrategy(scheme)
 
 	store := &genericregistry.Store{
-		NewFunc:                  func() runtime.Object { return &wardle.Fischer{} },
-		NewListFunc:              func() runtime.Object { return &wardle.FischerList{} },
-		PredicateFunc:            MatchFischer,
-		DefaultQualifiedResource: wardle.Resource("fischers"),
+		NewFunc:                   func() runtime.Object { return &wardle.Fischer{} },
+		NewListFunc:               func() runtime.Object { return &wardle.FischerList{} },
+		PredicateFunc:             MatchFischer,
+		DefaultQualifiedResource:  wardle.Resource("fischers"),
+		SingularQualifiedResource: wardle.Resource("fischer"),
 
 		CreateStrategy: strategy,
 		UpdateStrategy: strategy,
