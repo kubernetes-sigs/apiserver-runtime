@@ -24,27 +24,23 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/apiserver/pkg/admission"
-	"k8s.io/apiserver/pkg/endpoints/openapi"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	utilversion "k8s.io/apiserver/pkg/util/version"
 	"k8s.io/component-base/featuregate"
 	baseversion "k8s.io/component-base/version"
-	"k8s.io/sample-apiserver/pkg/admission/plugin/banflunder"
-	"k8s.io/sample-apiserver/pkg/admission/wardleinitializer"
-	"k8s.io/sample-apiserver/pkg/apis/wardle/v1alpha1"
-	"k8s.io/sample-apiserver/pkg/apiserver"
-	clientset "k8s.io/sample-apiserver/pkg/generated/clientset/versioned"
-	informers "k8s.io/sample-apiserver/pkg/generated/informers/externalversions"
-	sampleopenapi "k8s.io/sample-apiserver/pkg/generated/openapi"
 	netutils "k8s.io/utils/net"
+	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/admission/wardleinitializer"
+	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apis/wardle/v1alpha1"
+	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apiserver"
+	clientset "sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/generated/clientset/versioned"
+	informers "sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/generated/informers/externalversions"
 )
 
 const defaultEtcdPathPrefix = "/registry/wardle.example.com"
@@ -75,7 +71,7 @@ func WardleVersionToKubeVersion(ver *version.Version) *version.Version {
 }
 
 // NewWardleServerOptions returns a new WardleServerOptions
-func NewWardleServerOptions(out, errOut io.Writer) *WardleServerOptions {
+func NewWardleServerOptions(out, errOut io.Writer, versions ...schema.GroupVersion) *WardleServerOptions {
 	o := &WardleServerOptions{
 		RecommendedOptions: genericoptions.NewRecommendedOptions(
 			defaultEtcdPathPrefix,
@@ -85,7 +81,9 @@ func NewWardleServerOptions(out, errOut io.Writer) *WardleServerOptions {
 		StdOut: out,
 		StdErr: errOut,
 	}
-	o.RecommendedOptions.Etcd.StorageConfig.EncodeVersioner = runtime.NewMultiGroupVersioner(v1alpha1.SchemeGroupVersion, schema.GroupKind{Group: v1alpha1.GroupName})
+	// change: apiserver-runtime
+	//o.RecommendedOptions.Etcd.StorageConfig.EncodeVersioner = runtime.NewMultiGroupVersioner(v1alpha1.SchemeGroupVersion, schema.GroupKind{Group: v1alpha1.GroupName})
+	o.RecommendedOptions.Etcd.StorageConfig.EncodeVersioner = schema.GroupVersions(versions)
 	return o
 }
 
@@ -170,13 +168,16 @@ func (o WardleServerOptions) Validate(args []string) error {
 
 // Complete fills in fields required to have valid data
 func (o *WardleServerOptions) Complete() error {
-	if utilversion.DefaultComponentGlobalsRegistry.FeatureGateFor(apiserver.WardleComponentName).Enabled("BanFlunder") {
-		// register admission plugins
-		banflunder.Register(o.RecommendedOptions.Admission.Plugins)
+	// change: apiserver-runtime
+	//if utilversion.DefaultComponentGlobalsRegistry.FeatureGateFor(apiserver.WardleComponentName).Enabled("BanFlunder") {
+	//	// register admission plugins
+	//	banflunder.Register(o.RecommendedOptions.Admission.Plugins)
+	//
+	//	// add admission plugins to the RecommendedPluginOrder
+	//	o.RecommendedOptions.Admission.RecommendedPluginOrder = append(o.RecommendedOptions.Admission.RecommendedPluginOrder, "BanFlunder")
+	//}
 
-		// add admission plugins to the RecommendedPluginOrder
-		o.RecommendedOptions.Admission.RecommendedPluginOrder = append(o.RecommendedOptions.Admission.RecommendedPluginOrder, "BanFlunder")
-	}
+	ApplyServerOptionsFns(o)
 	return nil
 }
 
@@ -199,13 +200,14 @@ func (o *WardleServerOptions) Config() (*apiserver.Config, error) {
 
 	serverConfig := genericapiserver.NewRecommendedConfig(apiserver.Codecs)
 
-	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(sampleopenapi.GetOpenAPIDefinitions, openapi.NewDefinitionNamer(apiserver.Scheme))
-	serverConfig.OpenAPIConfig.Info.Title = "Wardle"
-	serverConfig.OpenAPIConfig.Info.Version = "0.1"
-
-	serverConfig.OpenAPIV3Config = genericapiserver.DefaultOpenAPIV3Config(sampleopenapi.GetOpenAPIDefinitions, openapi.NewDefinitionNamer(apiserver.Scheme))
-	serverConfig.OpenAPIV3Config.Info.Title = "Wardle"
-	serverConfig.OpenAPIV3Config.Info.Version = "0.1"
+	// change: apiserver-runtime
+	//serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(sampleopenapi.GetOpenAPIDefinitions, openapi.NewDefinitionNamer(apiserver.Scheme))
+	//serverConfig.OpenAPIConfig.Info.Title = "Wardle"
+	//serverConfig.OpenAPIConfig.Info.Version = "0.1"
+	//
+	//serverConfig.OpenAPIV3Config = genericapiserver.DefaultOpenAPIV3Config(sampleopenapi.GetOpenAPIDefinitions, openapi.NewDefinitionNamer(apiserver.Scheme))
+	//serverConfig.OpenAPIV3Config.Info.Title = "Wardle"
+	//serverConfig.OpenAPIV3Config.Info.Version = "0.1"
 
 	serverConfig.FeatureGate = utilversion.DefaultComponentGlobalsRegistry.FeatureGateFor(utilversion.DefaultKubeComponent)
 	serverConfig.EffectiveVersion = utilversion.DefaultComponentGlobalsRegistry.EffectiveVersionFor(apiserver.WardleComponentName)
@@ -213,6 +215,9 @@ func (o *WardleServerOptions) Config() (*apiserver.Config, error) {
 	if err := o.RecommendedOptions.ApplyTo(serverConfig); err != nil {
 		return nil, err
 	}
+
+	// change: apiserver-runtime
+	serverConfig = ApplyRecommendedConfigFns(serverConfig)
 
 	config := &apiserver.Config{
 		GenericConfig: serverConfig,

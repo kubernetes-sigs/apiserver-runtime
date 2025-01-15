@@ -57,8 +57,8 @@ rm -rf vendor || true
 rm -rf Godeps || true
 git rm -rf vendor || true
 git rm -rf Godeps || true
-mv ${goPath}/src/k8s.io/sample-apiserver/vendor .
-mv ${goPath}/src/k8s.io/sample-apiserver/Godeps .
+mv ${goPath}/src/sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/vendor .
+mv ${goPath}/src/sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/Godeps .
 git add vendor
 git add Godeps
 git commit -m "sync: resync vendor folder"

@@ -21,8 +21,8 @@ import (
 	"k8s.io/apiserver/pkg/registry/generic"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
-	"k8s.io/sample-apiserver/pkg/apis/wardle"
-	"k8s.io/sample-apiserver/pkg/registry"
+	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apis/wardle"
+	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/registry"
 )
 
 // NewREST returns a RESTStorage object that will work against API services.

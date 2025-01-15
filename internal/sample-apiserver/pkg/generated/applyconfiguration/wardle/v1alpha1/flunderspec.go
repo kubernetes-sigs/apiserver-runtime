@@ -19,7 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "k8s.io/sample-apiserver/pkg/apis/wardle/v1alpha1"
+	v1alpha1 "sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apis/wardle/v1alpha1"
 )
 
 // FlunderSpecApplyConfiguration represents a declarative configuration of the FlunderSpec type for use

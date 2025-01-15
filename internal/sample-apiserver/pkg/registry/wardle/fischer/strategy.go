@@ -28,7 +28,7 @@ import (
 	"k8s.io/apiserver/pkg/storage"
 	"k8s.io/apiserver/pkg/storage/names"
 
-	"k8s.io/sample-apiserver/pkg/apis/wardle"
+	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apis/wardle"
 )
 
 // NewStrategy creates and returns a fischerStrategy instance

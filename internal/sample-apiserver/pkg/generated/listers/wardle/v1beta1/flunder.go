@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
-	v1beta1 "k8s.io/sample-apiserver/pkg/apis/wardle/v1beta1"
+	v1beta1 "sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apis/wardle/v1beta1"
 )
 
 // FlunderLister helps list Flunders.
