@@ -17,6 +17,7 @@ limitations under the License.
 package builder
 
 import (
+	"context"
 	"flag"
 	"os"
 
@@ -24,8 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
-	genericapiserver "k8s.io/apiserver/pkg/server"
-
 	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apiserver"
 	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/cmd/server"
 )
@@ -86,7 +85,7 @@ func (a *Server) Build() (*Command, error) {
 		return nil, errs{list: a.errs}
 	}
 	o := server.NewWardleServerOptions(os.Stdout, os.Stderr, a.orderedGroupVersions...)
-	cmd := server.NewCommandStartServer(o, genericapiserver.SetupSignalHandler())
+	cmd := server.NewCommandStartServer(context.Background(), o)
 	server.ApplyFlagsFns(cmd.Flags())
 	cmd.Flags().AddGoFlagSet(flag.CommandLine)
 	return cmd, nil

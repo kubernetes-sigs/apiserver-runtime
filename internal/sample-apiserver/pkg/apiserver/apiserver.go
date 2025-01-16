@@ -21,8 +21,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apimachinery/pkg/version"
 	genericapiserver "k8s.io/apiserver/pkg/server"
+
+	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apis/wardle/install"
 )
 
 var (
@@ -30,10 +31,12 @@ var (
 	Scheme = runtime.NewScheme()
 	// Codecs provides methods for retrieving codecs and serializers for specific
 	// versions and content types.
-	Codecs = serializer.NewCodecFactory(Scheme)
+	Codecs              = serializer.NewCodecFactory(Scheme)
+	WardleComponentName = "wardle"
 )
 
 func init() {
+	install.Install(Scheme)
 
 	// we need to add the options to empty v1
 	// TODO fix the server code to avoid this
@@ -83,11 +86,6 @@ func (cfg *Config) Complete() CompletedConfig {
 		&cfg.ExtraConfig,
 	}
 
-	c.GenericConfig.Version = &version.Info{
-		Major: "1",
-		Minor: "0",
-	}
-
 	return CompletedConfig{&c}
 }
 
@@ -97,9 +95,6 @@ func (c completedConfig) New() (*WardleServer, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// change: apiserver-runtime
-	genericServer = ApplyGenericAPIServerFns(genericServer)
 
 	s := &WardleServer{
 		GenericAPIServer: genericServer,

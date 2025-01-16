@@ -54,7 +54,7 @@ type kineProxiedRESTOptionsGetter struct {
 }
 
 // GetRESTOptions implements RESTOptionsGetter interface.
-func (g *kineProxiedRESTOptionsGetter) GetRESTOptions(resource schema.GroupResource) (generic.RESTOptions, error) {
+func (g *kineProxiedRESTOptionsGetter) GetRESTOptions(resource schema.GroupResource, example runtime.Object) (generic.RESTOptions, error) {
 	etcdConfig, err := endpoint.Listen(context.TODO(), endpoint.Config{
 		Endpoint: g.dsn,
 	})

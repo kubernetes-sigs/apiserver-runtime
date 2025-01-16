@@ -33,10 +33,10 @@ echo ${goPath}
 
 export GOPATH=${goPath}
 
-mkdir -p ${goPath}/src/sigs.k8s.io/apiserver-runtime/internal/sample-apiserver
-cp -R . ${goPath}/src/sigs.k8s.io/apiserver-runtime/internal/sample-apiserver
+mkdir -p ${goPath}/src/k8s.io/sample-apiserver
+cp -R . ${goPath}/src/k8s.io/sample-apiserver
 
-pushd ${goPath}/src/sigs.k8s.io/apiserver-runtime/internal/sample-apiserver
+pushd ${goPath}/src/k8s.io/sample-apiserver
 rm -rf vendor || true
 
 # restore what we have in our new manifest that we've sync
