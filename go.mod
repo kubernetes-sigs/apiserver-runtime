@@ -4,8 +4,6 @@ module sigs.k8s.io/apiserver-runtime
 
 go 1.23
 
-toolchain go1.23.4
-
 require (
 	github.com/golangci/golangci-lint v1.50.1
 	github.com/google/gofuzz v1.2.0
