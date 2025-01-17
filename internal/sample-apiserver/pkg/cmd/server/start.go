@@ -37,7 +37,6 @@ import (
 	baseversion "k8s.io/component-base/version"
 	netutils "k8s.io/utils/net"
 	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/admission/wardleinitializer"
-	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apis/wardle/v1alpha1"
 	"sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/apiserver"
 	clientset "sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/generated/clientset/versioned"
 	informers "sigs.k8s.io/apiserver-runtime/internal/sample-apiserver/pkg/generated/informers/externalversions"
@@ -75,7 +74,8 @@ func NewWardleServerOptions(out, errOut io.Writer, versions ...schema.GroupVersi
 	o := &WardleServerOptions{
 		RecommendedOptions: genericoptions.NewRecommendedOptions(
 			defaultEtcdPathPrefix,
-			apiserver.Codecs.LegacyCodec(v1alpha1.SchemeGroupVersion),
+			// change: apiserver-runtime
+			apiserver.Codecs.LegacyCodec(versions...),
 		),
 
 		StdOut: out,
