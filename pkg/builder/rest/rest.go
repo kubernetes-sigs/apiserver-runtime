@@ -74,15 +74,16 @@ func newStore(
 	gvr schema.GroupVersionResource,
 	s Strategy, optsGetter generic.RESTOptionsGetter, fn StoreFn) (*genericregistry.Store, error) {
 	store := &genericregistry.Store{
-		NewFunc:                  single,
-		NewListFunc:              list,
-		PredicateFunc:            s.Match,
-		DefaultQualifiedResource: gvr.GroupResource(),
-		TableConvertor:           s,
-		CreateStrategy:           s,
-		UpdateStrategy:           s,
-		DeleteStrategy:           s,
-		StorageVersioner:         gvr.GroupVersion(),
+		NewFunc:                   single,
+		NewListFunc:               list,
+		PredicateFunc:             s.Match,
+		DefaultQualifiedResource:  gvr.GroupResource(),
+		SingularQualifiedResource: gvr.GroupResource(),
+		TableConvertor:            s,
+		CreateStrategy:            s,
+		UpdateStrategy:            s,
+		DeleteStrategy:            s,
+		StorageVersioner:          gvr.GroupVersion(),
 	}
 
 	options := &generic.StoreOptions{RESTOptions: optsGetter, AttrFunc: GetAttrs}
