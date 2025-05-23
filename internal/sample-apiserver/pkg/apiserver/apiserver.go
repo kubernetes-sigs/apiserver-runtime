@@ -96,6 +96,9 @@ func (c completedConfig) New() (*WardleServer, error) {
 		return nil, err
 	}
 
+	// change: apiserver-runtime
+	genericServer = ApplyGenericAPIServerFns(genericServer)
+
 	s := &WardleServer{
 		GenericAPIServer: genericServer,
 	}
